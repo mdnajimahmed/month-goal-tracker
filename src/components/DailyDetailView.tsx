@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Goal, DayEntry, TimeBlock } from '@/types/goals';
+import { Goal, DayEntry, TimeBlock, DayStatus } from '@/types/goals';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { StatusIndicator, RAGBadge } from './StatusIndicator';
 import { Button } from '@/components/ui/button';
@@ -80,7 +80,7 @@ export const DailyDetailView = ({ selectedDate, onBack }: DailyDetailViewProps) 
           <div className="space-y-6">
             {monthData.goals.map((goal) => {
               const entry = getEntry(goal.id, selectedDate);
-              const status = entry?.status || 'pending';
+              const status: DayStatus = entry?.status || 'miss';
 
               return (
                 <div key={goal.id} className="space-y-2">

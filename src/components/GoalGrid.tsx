@@ -202,8 +202,16 @@ export const GoalGrid = () => {
             </div>
           </div>
 
-          {/* Goal rows */}
-          {monthData.goals.map((goal) => {
+          {/* Goal rows - sorted by start time, then end time */}
+          {[...monthData.goals]
+            .sort((a, b) => {
+              // Compare start times first
+              const startCompare = a.startTime.localeCompare(b.startTime);
+              if (startCompare !== 0) return startCompare;
+              // If start times are equal, compare end times
+              return a.endTime.localeCompare(b.endTime);
+            })
+            .map((goal) => {
             const analytics = calculateGoalAnalytics(goal.id);
             
             return (

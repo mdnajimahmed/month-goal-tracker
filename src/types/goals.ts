@@ -9,7 +9,7 @@ export interface Goal {
   targetEndDate?: string; // "2025-03-15" format - when goal should be completed
 }
 
-export type DayStatus = 'hit' | 'miss' | 'partial' | 'pending';
+export type DayStatus = 'hit' | 'miss' | 'partial';
 
 export interface DayEntry {
   id: string;

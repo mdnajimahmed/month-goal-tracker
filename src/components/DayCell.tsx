@@ -43,7 +43,7 @@ export const DayCell = ({
   const [actualMinutes, setActualMinutes] = useState(entry?.actualMinutes || 0);
   const [missedReason, setMissedReason] = useState(entry?.missedReason || '');
 
-  const status: DayStatus = entry?.status || 'pending';
+  const status: DayStatus = entry?.status || 'miss';
   const hasComment = entry?.comment && entry.comment.length > 0;
 
   const handleSaveDetails = () => {
@@ -93,7 +93,7 @@ export const DayCell = ({
             <div className="space-y-2">
               <Label>Status</Label>
               <div className="flex gap-2">
-                {(['hit', 'partial', 'miss', 'pending'] as DayStatus[]).map((s) => (
+                {(['hit', 'partial', 'miss'] as DayStatus[]).map((s) => (
                   <Button
                     key={s}
                     variant={status === s ? 'default' : 'outline'}

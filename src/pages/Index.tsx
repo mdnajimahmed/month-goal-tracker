@@ -7,11 +7,11 @@ const Index = () => {
       <header className="flex items-center justify-between px-4 py-2 border-b bg-card">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">GT</span>
+            <span className="text-primary-foreground font-bold text-sm">Rx</span>
           </div>
           <div>
-            <h1 className="font-semibold text-sm">Goal Tracker</h1>
-            <p className="text-xs text-muted-foreground">Month-by-month planning</p>
+            <h1 className="font-semibold text-sm">Ruthless Execution</h1>
+            <p className="text-xs text-muted-foreground">Self-discipline applied to priorities</p>
           </div>
         </div>
       </header>

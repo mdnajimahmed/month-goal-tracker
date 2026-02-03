@@ -23,9 +23,8 @@ const getWeekendDays = (year: number, month: number): number[] => {
 const randomStatus = (): DayStatus => {
   const rand = Math.random();
   if (rand < 0.6) return 'hit';
-  if (rand < 0.75) return 'partial';
-  if (rand < 0.9) return 'miss';
-  return 'pending';
+  if (rand < 0.8) return 'partial';
+  return 'miss';
 };
 
 const randomMissedReason = (): MissedReason => {

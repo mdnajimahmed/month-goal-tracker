@@ -129,7 +129,7 @@ export const useGoalTracker = () => {
           id: uuidv4(),
           goalId,
           date,
-          status: 'pending',
+          status: 'miss',
           actualMinutes: 0,
           comment: '',
           timeBlocks: [],
@@ -142,8 +142,8 @@ export const useGoalTracker = () => {
 
   const toggleDayStatus = useCallback((goalId: string, date: string) => {
     const entry = getEntry(goalId, date);
-    const currentStatus: DayStatus = entry?.status || 'pending';
-    const statusOrder: DayStatus[] = ['pending', 'hit', 'partial', 'miss'];
+    const currentStatus: DayStatus = entry?.status || 'miss';
+    const statusOrder: DayStatus[] = ['hit', 'partial', 'miss'];
     const nextIndex = (statusOrder.indexOf(currentStatus) + 1) % statusOrder.length;
     updateEntry(goalId, date, { status: statusOrder[nextIndex] });
   }, [getEntry, updateEntry]);
