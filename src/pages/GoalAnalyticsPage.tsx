@@ -4,7 +4,7 @@ import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Flame, TrendingUp, CheckCircle2, XCircle, AlertTriangle, Target, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Flame, CheckCircle2, XCircle, AlertTriangle, Target, Clock, Calendar, Flag } from 'lucide-react';
 import { format, subDays, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -64,9 +64,21 @@ const GoalAnalyticsPage = () => {
     const today = new Date();
     const daysSinceStart = differenceInDays(today, startDate);
     
+    let endDateInfo = null;
+    if (goal.targetEndDate) {
+      const endDate = parseISO(goal.targetEndDate);
+      const daysToGo = differenceInDays(endDate, today);
+      endDateInfo = {
+        endDate: format(endDate, 'MMM d, yyyy'),
+        daysToGo,
+        isOverdue: daysToGo < 0,
+      };
+    }
+    
     return {
       startDate: format(startDate, 'MMM d, yyyy'),
       daysSinceStart,
+      endDateInfo,
     };
   }, [goal]);
 
@@ -150,7 +162,7 @@ const GoalAnalyticsPage = () => {
           {/* Content */}
           <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
             {/* Summary cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
@@ -204,6 +216,29 @@ const GoalAnalyticsPage = () => {
                   </p>
                 </CardContent>
               </Card>
+
+              {goalInfo?.endDateInfo && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Target End</CardTitle>
+                    <Flag className={cn(
+                      "h-4 w-4",
+                      goalInfo.endDateInfo.isOverdue ? "text-rag-red" : "text-rag-green"
+                    )} />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-lg font-bold">{goalInfo.endDateInfo.endDate}</div>
+                    <p className={cn(
+                      "text-xs",
+                      goalInfo.endDateInfo.isOverdue ? "text-rag-red" : "text-muted-foreground"
+                    )}>
+                      {goalInfo.endDateInfo.isOverdue 
+                        ? `${Math.abs(goalInfo.endDateInfo.daysToGo)} days overdue` 
+                        : `${goalInfo.endDateInfo.daysToGo} days to go`}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* D-20 Heatmap */}

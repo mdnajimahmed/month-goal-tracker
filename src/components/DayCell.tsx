@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Goal, DayEntry, DayStatus, MISSED_REASONS } from '@/types/goals';
+import { Goal, DayEntry, DayStatus } from '@/types/goals';
 import { StatusIndicator } from './StatusIndicator';
+import { MissedReasonCombobox } from './MissedReasonCombobox';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -12,13 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { MessageSquare } from 'lucide-react';
 
 interface DayCellProps {
@@ -135,18 +129,10 @@ export const DayCell = ({
             {status === 'miss' && (
               <div className="space-y-2">
                 <Label>Reason for Miss</Label>
-                <Select value={missedReason} onValueChange={setMissedReason}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a reason" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MISSED_REASONS.map((reason) => (
-                      <SelectItem key={reason} value={reason}>
-                        {reason}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MissedReasonCombobox
+                  value={missedReason}
+                  onValueChange={setMissedReason}
+                />
               </div>
             )}
 

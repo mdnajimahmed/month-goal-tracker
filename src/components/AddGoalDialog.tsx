@@ -1,15 +1,22 @@
 import { useState } from 'react';
-import { Goal, DayEntry, MISSED_REASONS } from '@/types/goals';
-import { cn } from '@/lib/utils';
+import { Goal } from '@/types/goals';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Plus, CalendarIcon } from 'lucide-react';
+import { format, addMonths } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface AddGoalDialogProps {
   open: boolean;
@@ -21,6 +28,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
   const [title, setTitle] = useState('');
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('07:30');
+  const [targetEndDate, setTargetEndDate] = useState<Date | undefined>(addMonths(new Date(), 1));
 
   const handleAdd = () => {
     if (!title.trim()) return;
@@ -35,11 +43,13 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
       endTime,
       allocatedMinutes: Math.max(0, allocatedMinutes),
       tags: [],
+      targetEndDate: targetEndDate ? format(targetEndDate, 'yyyy-MM-dd') : undefined,
     });
 
     setTitle('');
     setStartTime('07:00');
     setEndTime('07:30');
+    setTargetEndDate(addMonths(new Date(), 1));
     onOpenChange(false);
   };
 
@@ -78,6 +88,36 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
                 className="font-mono"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Target End Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !targetEndDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {targetEndDate ? format(targetEndDate, 'PPP') : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={targetEndDate}
+                  onSelect={setTargetEndDate}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              When do you want to complete this goal?
+            </p>
           </div>
         </div>
         <div className="flex justify-end gap-2">

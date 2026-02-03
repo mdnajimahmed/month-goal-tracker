@@ -6,6 +6,7 @@ export interface Goal {
   allocatedMinutes: number;
   tags: string[];
   createdAt: string;
+  targetEndDate?: string; // "2025-03-15" format - when goal should be completed
 }
 
 export type DayStatus = 'hit' | 'miss' | 'partial' | 'pending';
@@ -48,6 +49,9 @@ export const MISSED_REASONS = [
   'Family',
   'Technical Issues',
   'Priority Shift',
+  'Late Wakeup',
+  'Early Sleep',
+  'Late Return',
   'Overslept',
   'Vacation',
   'Holiday',
@@ -67,6 +71,12 @@ export const MISSED_REASONS = [
   'Physical Health',
   'Forgot',
   'Procrastination',
+  'Burnout',
+  'No Motivation',
+  'Distracted',
+  'Social Event',
+  'Gym',
+  'Errands',
   'Other',
 ] as const;
 
