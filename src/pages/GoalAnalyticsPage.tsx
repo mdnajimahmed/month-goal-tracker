@@ -4,22 +4,14 @@ import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Flame, TrendingUp, CheckCircle2, XCircle, AlertTriangle, Target } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import { format } from 'date-fns';
+import { ArrowLeft, Flame, TrendingUp, CheckCircle2, XCircle, AlertTriangle, Target, Clock, Calendar } from 'lucide-react';
+import { format, subDays, parseISO, differenceInDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const GoalAnalyticsPage = () => {
   const { goalId } = useParams<{ goalId: string }>();
   const navigate = useNavigate();
-  const { monthData, calculateGoalAnalytics, getEntry } = useGoalTracker();
+  const { monthData, calculateGoalAnalytics } = useGoalTracker();
 
   const goal = useMemo(() => {
     return monthData.goals.find((g) => g.id === goalId);
@@ -30,22 +22,28 @@ const GoalAnalyticsPage = () => {
     return calculateGoalAnalytics(goalId);
   }, [goalId, calculateGoalAnalytics]);
 
-  // Get daily data for this goal
-  const dailyData = useMemo(() => {
+  // Get last 20 days heatmap data
+  const heatmapData = useMemo(() => {
     if (!goalId) return [];
     
-    const entries = monthData.entries.filter((e) => e.goalId === goalId);
-    return entries.map((entry) => ({
-      date: format(new Date(entry.date), 'd'),
-      fullDate: entry.date,
-      status: entry.status,
-      actualMinutes: entry.actualMinutes,
-      allocatedMinutes: goal?.allocatedMinutes || 0,
-      completion: goal?.allocatedMinutes 
-        ? Math.min(100, (entry.actualMinutes / goal.allocatedMinutes) * 100) 
-        : 0,
-    })).sort((a, b) => a.fullDate.localeCompare(b.fullDate));
-  }, [goalId, monthData.entries, goal]);
+    const today = new Date();
+    const result: { date: string; dateStr: string; dayName: string; status: 'hit' | 'miss' | 'partial' | 'pending' | 'none' }[] = [];
+    
+    for (let i = 19; i >= 0; i--) {
+      const date = subDays(today, i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
+      
+      result.push({
+        date: dateStr,
+        dateStr: format(date, 'd'),
+        dayName: format(date, 'EEE'),
+        status: entry?.status || 'none',
+      });
+    }
+    
+    return result;
+  }, [goalId, monthData.entries]);
 
   // Get missed reasons for this goal
   const missedReasons = useMemo(() => {
@@ -57,6 +55,20 @@ const GoalAnalyticsPage = () => {
     
     return reasons;
   }, [analytics]);
+
+  // Calculate goal duration info
+  const goalInfo = useMemo(() => {
+    if (!goal) return null;
+    
+    const startDate = parseISO(goal.createdAt);
+    const today = new Date();
+    const daysSinceStart = differenceInDays(today, startDate);
+    
+    return {
+      startDate: format(startDate, 'MMM d, yyyy'),
+      daysSinceStart,
+    };
+  }, [goal]);
 
   if (!goal || !analytics) {
     return (
@@ -91,6 +103,16 @@ const GoalAnalyticsPage = () => {
                       ragStatus === 'partial' ? 'text-rag-amber' : 
                       ragStatus === 'miss' ? 'text-rag-red' : 'text-muted-foreground';
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'hit': return 'bg-rag-green';
+      case 'miss': return 'bg-rag-red';
+      case 'partial': return 'bg-rag-amber';
+      case 'pending': return 'bg-muted-foreground/50';
+      default: return 'bg-muted/30';
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* App header */}
@@ -117,7 +139,7 @@ const GoalAnalyticsPage = () => {
             <div className="flex-1">
               <h2 className="font-semibold">{goal.title}</h2>
               <p className="text-sm text-muted-foreground font-mono">
-                {goal.startTime} - {goal.endTime} ({goal.allocatedMinutes}m allocated)
+                {goal.startTime} - {goal.endTime} ({goal.allocatedMinutes}m daily)
               </p>
             </div>
             <div className={`text-2xl font-bold ${statusColor}`}>
@@ -157,66 +179,78 @@ const GoalAnalyticsPage = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Days Tracked</CardTitle>
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Total Time Spent</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold font-mono">{analytics.totalDays}</div>
+                  <div className="text-2xl font-bold font-mono">
+                    {Math.floor(analytics.totalActualMinutes / 60)}h {analytics.totalActualMinutes % 60}m
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {analytics.hitDays} hit, {analytics.partialDays} partial, {analytics.missDays} miss
+                    Since beginning
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Time Stats</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Started</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold font-mono">{analytics.totalActualMinutes}m</div>
+                  <div className="text-lg font-bold">{goalInfo?.startDate}</div>
                   <p className="text-xs text-muted-foreground">
-                    of {analytics.totalAllocatedMinutes}m allocated
+                    {goalInfo?.daysSinceStart} days ago
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Daily performance chart */}
+            {/* D-20 Heatmap */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Daily Performance</CardTitle>
+                <CardTitle className="text-base">Daily Performance (Last 20 Days)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dailyData}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis
-                        dataKey="date"
-                        className="text-xs"
-                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                      />
-                      <YAxis
-                        domain={[0, 100]}
-                        className="text-xs"
-                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '6px',
-                        }}
-                        formatter={(value: number) => [`${value.toFixed(0)}%`, 'Completion']}
-                      />
-                      <Bar
-                        dataKey="completion"
-                        radius={[2, 2, 0, 0]}
-                        fill="hsl(var(--primary))"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="flex gap-1 flex-wrap">
+                  {heatmapData.map((day) => (
+                    <div
+                      key={day.date}
+                      className="flex flex-col items-center gap-1"
+                      title={`${day.date}: ${day.status}`}
+                    >
+                      <span className="text-[10px] text-muted-foreground">{day.dayName}</span>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded flex items-center justify-center text-xs font-mono font-medium',
+                          getStatusColor(day.status),
+                          day.status === 'hit' || day.status === 'miss' || day.status === 'partial' 
+                            ? 'text-white' 
+                            : 'text-muted-foreground'
+                        )}
+                      >
+                        {day.dateStr}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-rag-green" />
+                    <span>Hit</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-rag-amber" />
+                    <span>Partial</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-rag-red" />
+                    <span>Miss</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-muted/30" />
+                    <span>No data</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -277,7 +311,7 @@ const GoalAnalyticsPage = () => {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-rag-amber" />
-                    Reasons for Missed Days
+                    Common Reasons for Missing
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
