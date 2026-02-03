@@ -26,11 +26,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import { ViewMode } from '@/types/goals';
 
@@ -42,7 +37,6 @@ const COLORS = {
   hit: 'hsl(142, 71%, 45%)',
   miss: 'hsl(0, 84%, 60%)',
   partial: 'hsl(38, 92%, 50%)',
-  pending: 'hsl(215, 16%, 47%)',
 };
 
 export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
@@ -88,24 +82,6 @@ export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
     }));
   }, [analytics.mostFrequentMissedReasons]);
 
-  const statusDistribution = useMemo(() => {
-    const totals = analytics.goalAnalytics.reduce(
-      (acc, ga) => ({
-        hit: acc.hit + ga.hitDays,
-        miss: acc.miss + ga.missDays,
-        partial: acc.partial + ga.partialDays,
-        pending: acc.pending + (ga.totalDays - ga.hitDays - ga.missDays - ga.partialDays),
-      }),
-      { hit: 0, miss: 0, partial: 0, pending: 0 }
-    );
-
-    return [
-      { name: 'Hit', value: totals.hit, color: COLORS.hit },
-      { name: 'Partial', value: totals.partial, color: COLORS.partial },
-      { name: 'Miss', value: totals.miss, color: COLORS.miss },
-      { name: 'Pending', value: totals.pending, color: COLORS.pending },
-    ].filter((d) => d.value > 0);
-  }, [analytics.goalAnalytics]);
 
   const bestGoal = monthData.goals.find((g) => g.id === analytics.bestPerformingGoal);
   const worstGoal = monthData.goals.find((g) => g.id === analytics.worstPerformingGoal);
@@ -220,98 +196,44 @@ export const AnalyticsView = ({ onViewChange }: AnalyticsViewProps) => {
               </Card>
             </div>
 
-            {/* Charts row */}
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Daily heatmap */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Daily Hit Rate</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={heatmapData}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                        <XAxis
-                          dataKey="date"
-                          className="text-xs"
-                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                        />
-                        <YAxis
-                          domain={[0, 100]}
-                          className="text-xs"
-                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--card))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '6px',
-                          }}
-                          formatter={(value: number) => [`${value.toFixed(0)}%`, 'Hit Rate']}
-                        />
-                        <Bar
-                          dataKey="rate"
-                          radius={[2, 2, 0, 0]}
-                          fill="hsl(var(--primary))"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Status distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Status Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[200px] flex items-center justify-center">
-                    {statusDistribution.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={statusDistribution}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={40}
-                            outerRadius={80}
-                            paddingAngle={2}
-                            dataKey="value"
-                          >
-                            {statusDistribution.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '6px',
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <p className="text-muted-foreground">No data</p>
-                    )}
-                  </div>
-                  <div className="flex justify-center gap-4 mt-2">
-                    {statusDistribution.map((d) => (
-                      <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: d.color }}
-                        />
-                        <span>{d.name}</span>
-                        <span className="font-mono text-muted-foreground">({d.value})</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Daily heatmap - full width */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Daily Hit Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={heatmapData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis
+                        dataKey="date"
+                        className="text-xs"
+                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        className="text-xs"
+                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                        }}
+                        formatter={(value: number) => [`${value.toFixed(0)}%`, 'Hit Rate']}
+                      />
+                      <Bar
+                        dataKey="rate"
+                        radius={[2, 2, 0, 0]}
+                        fill="hsl(var(--primary))"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Goal performance table */}
             <Card>

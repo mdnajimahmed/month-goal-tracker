@@ -23,7 +23,8 @@ import {
   Pencil, 
   Trash2, 
   Flame, 
-  TrendingUp 
+  TrendingUp,
+  BarChart3,
 } from 'lucide-react';
 
 interface GoalRowHeaderProps {
@@ -31,6 +32,7 @@ interface GoalRowHeaderProps {
   analytics: GoalAnalytics;
   onUpdate: (updates: Partial<Goal>) => void;
   onDelete: () => void;
+  onViewAnalytics?: () => void;
 }
 
 const formatTime = (time: string) => {
@@ -49,6 +51,7 @@ export const GoalRowHeader = ({
   analytics,
   onUpdate,
   onDelete,
+  onViewAnalytics,
 }: GoalRowHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(goal.title);
@@ -109,6 +112,12 @@ export const GoalRowHeader = ({
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </DropdownMenuItem>
+          {onViewAnalytics && (
+            <DropdownMenuItem onClick={onViewAnalytics}>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              View Analytics
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={onDelete} className="text-destructive">
             <Trash2 className="mr-2 h-4 w-4" />
             Delete

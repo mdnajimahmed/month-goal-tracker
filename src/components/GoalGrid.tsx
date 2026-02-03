@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
-import { format, isToday, isBefore, startOfDay } from 'date-fns';
+import { format, isToday, isBefore, startOfDay, subDays, addDays } from 'date-fns';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
-import { MonthPicker } from './MonthPicker';
 import { GoalRowHeader } from './GoalRowHeader';
 import { DayCell } from './DayCell';
 import { AddGoalDialog, AddGoalButton } from './AddGoalDialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Forward, Grid3X3, CalendarDays, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grid3X3, BarChart3 } from 'lucide-react';
 import { ViewMode } from '@/types/goals';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 interface GoalGridProps {
   onViewChange: (view: ViewMode) => void;
@@ -20,7 +22,6 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
     currentYear,
     currentMonth,
     monthData,
-    daysInMonth,
     addGoal,
     updateGoal,
     deleteGoal,
@@ -29,31 +30,55 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
     toggleDayStatus,
     toggleNonOfficeDay,
     goToMonth,
-    goToPreviousMonth,
-    goToNextMonth,
-    carryForwardGoals,
     calculateGoalAnalytics,
   } = useGoalTracker();
 
   const [isAddingGoal, setIsAddingGoal] = useState(false);
-
-  const days = useMemo(() => {
-    return Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  }, [daysInMonth]);
+  // End date is the last day visible (D), start date is D-6 (7 days total)
+  const [endDate, setEndDate] = useState<Date>(new Date());
 
   const today = new Date();
 
-  const getDayInfo = (day: number) => {
-    const date = new Date(currentYear, currentMonth, day);
+  // Generate array of 7 days from endDate back to endDate-6
+  const days = useMemo(() => {
+    const result: Date[] = [];
+    for (let i = 6; i >= 0; i--) {
+      result.push(subDays(endDate, i));
+    }
+    return result;
+  }, [endDate]);
+
+  const handlePreviousWeek = () => {
+    setEndDate((prev) => subDays(prev, 7));
+  };
+
+  const handleNextWeek = () => {
+    setEndDate((prev) => addDays(prev, 7));
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setEndDate(date);
+      // Also sync the month data
+      goToMonth(date.getFullYear(), date.getMonth());
+    }
+  };
+
+  const getDayInfo = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const isNonOffice = monthData.nonOfficeDays.includes(day);
+    const dayNumber = date.getDate();
+    
+    // Check if this day is in the current month's nonOfficeDays
+    const isInCurrentMonth = date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+    const isNonOffice = isInCurrentMonth && monthData.nonOfficeDays.includes(dayNumber);
+    
     const isTodayDate = isToday(date);
     const isPast = isBefore(startOfDay(date), startOfDay(today)) || isTodayDate;
 
     return {
       date: dateStr,
+      dayNumber,
       dayOfWeek,
       isOfficeDay: !isNonOffice,
       isToday: isTodayDate,
@@ -62,27 +87,52 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
     };
   };
 
+  const startDateFormatted = format(days[0], 'MMM d');
+  const endDateFormatted = format(endDate, 'MMM d, yyyy');
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-card">
-        <div className="flex items-center gap-4">
-          <MonthPicker
-            currentYear={currentYear}
-            currentMonth={currentMonth}
-            onMonthChange={goToMonth}
-            onPrevious={goToPreviousMonth}
-            onNext={goToNextMonth}
-          />
+        <div className="flex items-center gap-2">
+          {/* Date navigation */}
           <Button
-            variant="outline"
-            size="sm"
-            onClick={carryForwardGoals}
-            className="gap-2"
-            disabled={monthData.goals.length === 0}
+            variant="ghost"
+            size="icon"
+            onClick={handlePreviousWeek}
+            className="h-8 w-8"
           >
-            <Forward className="h-4 w-4" />
-            Carry Forward
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="min-w-[200px] justify-center gap-2 font-medium"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                {startDateFormatted} - {endDateFormatted}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={handleDateSelect}
+                defaultMonth={endDate}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNextWeek}
+            className="h-8 w-8"
+          >
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
@@ -116,22 +166,27 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
             <div className="sticky left-0 z-30 border-r border-b border-grid-border bg-grid-header min-w-[280px]" />
             
             {/* Day columns */}
-            {days.map((day) => {
-              const info = getDayInfo(day);
+            {days.map((date) => {
+              const info = getDayInfo(date);
               return (
                 <div
-                  key={day}
+                  key={info.date}
                   className={cn(
                     'grid-cell grid-header flex flex-col items-center justify-center min-w-[48px] cursor-pointer',
                     !info.isOfficeDay && 'bg-day-nonoffice',
                     info.isToday && 'bg-day-today'
                   )}
                   onClick={() => onSelectDay(info.date)}
-                  onDoubleClick={() => toggleNonOfficeDay(day)}
+                  onDoubleClick={() => {
+                    // Toggle non-office day for current month only
+                    if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
+                      toggleNonOfficeDay(info.dayNumber);
+                    }
+                  }}
                   title="Click to view day details. Double-click to toggle office/non-office day."
                 >
                   <span className="text-xs">{info.dayName}</span>
-                  <span className="font-mono font-semibold">{day}</span>
+                  <span className="font-mono font-semibold">{info.dayNumber}</span>
                 </div>
               );
             })}
@@ -148,17 +203,18 @@ export const GoalGrid = ({ onViewChange, onSelectDay }: GoalGridProps) => {
                   analytics={analytics}
                   onUpdate={(updates) => updateGoal(goal.id, updates)}
                   onDelete={() => deleteGoal(goal.id)}
+                  onViewAnalytics={() => onViewChange('analytics')}
                 />
                 
-                {days.map((day) => {
-                  const info = getDayInfo(day);
+                {days.map((date) => {
+                  const info = getDayInfo(date);
                   const entry = getEntry(goal.id, info.date);
                   
                   return (
                     <DayCell
-                      key={day}
+                      key={info.date}
                       goal={goal}
-                      day={day}
+                      day={info.dayNumber}
                       date={info.date}
                       entry={entry}
                       isOfficeDay={info.isOfficeDay}
