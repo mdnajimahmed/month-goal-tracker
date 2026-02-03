@@ -9,6 +9,7 @@ import {
   GoalAnalytics,
   MonthAnalytics,
 } from '@/types/goals';
+import { generateSeedData } from '@/lib/seedData';
 
 const STORAGE_KEY = 'goal-tracker-data';
 
@@ -38,12 +39,17 @@ export const useGoalTracker = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // If data exists and has content, use it
+        if (Object.keys(parsed).length > 0) {
+          return parsed;
+        }
       } catch {
-        return {};
+        // Fall through to seed data
       }
     }
-    return {};
+    // Generate seed data for first-time users
+    return generateSeedData();
   });
 
   const monthKey = getMonthKey(currentYear, currentMonth);
