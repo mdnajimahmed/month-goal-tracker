@@ -318,7 +318,7 @@ const GoalAnalyticsPage = () => {
                   )}>
                     {streakInfo.consecutiveMisses}
                   </div>
-                  {streakInfo.recentReasons.length > 0 ? (
+                  {streakInfo.consecutiveMisses > 0 && streakInfo.recentReasons.length > 0 ? (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {streakInfo.recentReasons.slice(0, 3).map((reason) => (
                         <span
@@ -331,7 +331,11 @@ const GoalAnalyticsPage = () => {
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      {streakInfo.consecutiveMisses > 0 ? 'Missing' : 'No misses'}
+                      {streakInfo.consecutiveMisses > 0 ? (
+                        <span className="inline-flex items-center rounded-md bg-rag-red/10 text-rag-red px-1.5 py-0.5 text-[10px] font-medium">
+                          No reason provided
+                        </span>
+                      ) : 'No misses'}
                     </p>
                   )}
                 </CardContent>
@@ -406,16 +410,22 @@ const GoalAnalyticsPage = () => {
                 <CardTitle className="text-base">Status Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-rag-green" />
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium">Hit Days</span>
-                        <span className="font-mono">{analytics.hitDays}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center rounded-full bg-rag-green/10 px-2.5 py-0.5 text-xs font-mono font-semibold text-rag-green">
+                            {analytics.hitDays}
+                          </span>
+                          <span className="text-xs text-muted-foreground">/</span>
+                          <span className="text-xs text-muted-foreground font-mono">{goalInfo?.daysSinceStart || analytics.totalDays} days</span>
+                        </div>
                       </div>
                       <Progress 
-                        value={analytics.totalDays > 0 ? (analytics.hitDays / analytics.totalDays) * 100 : 0} 
+                        value={goalInfo?.daysSinceStart ? (analytics.hitDays / goalInfo.daysSinceStart) * 100 : 0} 
                         className="h-2" 
                       />
                     </div>
@@ -425,10 +435,16 @@ const GoalAnalyticsPage = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium">Partial Days</span>
-                        <span className="font-mono">{analytics.partialDays}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center rounded-full bg-rag-amber/10 px-2.5 py-0.5 text-xs font-mono font-semibold text-rag-amber">
+                            {analytics.partialDays}
+                          </span>
+                          <span className="text-xs text-muted-foreground">/</span>
+                          <span className="text-xs text-muted-foreground font-mono">{goalInfo?.daysSinceStart || analytics.totalDays} days</span>
+                        </div>
                       </div>
                       <Progress 
-                        value={analytics.totalDays > 0 ? (analytics.partialDays / analytics.totalDays) * 100 : 0} 
+                        value={goalInfo?.daysSinceStart ? (analytics.partialDays / goalInfo.daysSinceStart) * 100 : 0} 
                         className="h-2" 
                       />
                     </div>
@@ -438,10 +454,16 @@ const GoalAnalyticsPage = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium">Missed Days</span>
-                        <span className="font-mono">{analytics.missDays}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center rounded-full bg-rag-red/10 px-2.5 py-0.5 text-xs font-mono font-semibold text-rag-red">
+                            {analytics.missDays}
+                          </span>
+                          <span className="text-xs text-muted-foreground">/</span>
+                          <span className="text-xs text-muted-foreground font-mono">{goalInfo?.daysSinceStart || analytics.totalDays} days</span>
+                        </div>
                       </div>
                       <Progress 
-                        value={analytics.totalDays > 0 ? (analytics.missDays / analytics.totalDays) * 100 : 0} 
+                        value={goalInfo?.daysSinceStart ? (analytics.missDays / goalInfo.daysSinceStart) * 100 : 0} 
                         className="h-2" 
                       />
                     </div>
@@ -458,21 +480,41 @@ const GoalAnalyticsPage = () => {
                     <AlertTriangle className="h-4 w-4 text-rag-amber" />
                     Common Reasons for Missing
                   </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="inline-flex items-center rounded bg-rag-red/10 px-1.5 py-0.5 text-rag-red font-mono mr-1">count</span>
+                    <span className="text-muted-foreground">/</span>
+                    <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-mono mx-1">{analytics.missDays} missed</span>
+                    <span className="text-muted-foreground">/</span>
+                    <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-mono ml-1">{goalInfo?.daysSinceStart || analytics.totalDays} total</span>
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {missedReasons.map((reason, index) => (
                       <div key={reason.reason} className="flex items-center gap-3">
-                        <span className="w-6 text-center font-mono text-muted-foreground">
-                          #{index + 1}
+                        <span className={cn(
+                          "w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold",
+                          index === 0 ? "bg-rag-red/20 text-rag-red" : 
+                          index === 1 ? "bg-rag-amber/20 text-rag-amber" : 
+                          "bg-muted text-muted-foreground"
+                        )}>
+                          {index + 1}
                         </span>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-medium">{reason.reason}</span>
-                            <span className="font-mono text-sm">{reason.count}x</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center rounded-full bg-rag-red/10 px-2 py-0.5 text-xs font-mono font-semibold text-rag-red">
+                                {reason.count}
+                              </span>
+                              <span className="text-xs text-muted-foreground">/</span>
+                              <span className="text-xs text-muted-foreground font-mono">{analytics.missDays}</span>
+                              <span className="text-xs text-muted-foreground">/</span>
+                              <span className="text-xs text-muted-foreground font-mono">{goalInfo?.daysSinceStart || analytics.totalDays}</span>
+                            </div>
                           </div>
                           <Progress
-                            value={(reason.count / missedReasons[0].count) * 100}
+                            value={(reason.count / (goalInfo?.daysSinceStart || analytics.totalDays)) * 100}
                             className="h-1.5"
                           />
                         </div>
