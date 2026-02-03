@@ -3,13 +3,18 @@ import { Goal, GoalAnalytics } from '@/types/goals';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { RAGBadge, StatusDot } from './StatusIndicator';
+import { RAGBadge } from './StatusIndicator';
 import { 
   MoreVertical, 
   Pencil, 
@@ -25,7 +30,9 @@ import {
   Flame, 
   TrendingUp,
   BarChart3,
+  CalendarIcon,
 } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 
 interface GoalRowHeaderProps {
   goal: Goal;
@@ -57,6 +64,9 @@ export const GoalRowHeader = ({
   const [editTitle, setEditTitle] = useState(goal.title);
   const [editStartTime, setEditStartTime] = useState(goal.startTime);
   const [editEndTime, setEditEndTime] = useState(goal.endTime);
+  const [editTargetEndDate, setEditTargetEndDate] = useState<Date | undefined>(
+    goal.targetEndDate ? parseISO(goal.targetEndDate) : undefined
+  );
 
   const handleSave = () => {
     // Calculate allocated minutes from start/end time
@@ -69,11 +79,20 @@ export const GoalRowHeader = ({
       startTime: editStartTime,
       endTime: editEndTime,
       allocatedMinutes: Math.max(0, allocatedMinutes),
+      targetEndDate: editTargetEndDate ? format(editTargetEndDate, 'yyyy-MM-dd') : undefined,
     });
     setIsEditing(false);
   };
 
-  const ragStatus = analytics.completionRate >= 80 ? 'hit' : 
+  const handleOpenEdit = () => {
+    setEditTitle(goal.title);
+    setEditStartTime(goal.startTime);
+    setEditEndTime(goal.endTime);
+    setEditTargetEndDate(goal.targetEndDate ? parseISO(goal.targetEndDate) : undefined);
+    setIsEditing(true);
+  };
+
+  const ragStatus = analytics.completionRate >= 80 ? 'hit' :
                     analytics.completionRate >= 50 ? 'partial' : 
                     analytics.completionRate > 0 ? 'miss' : 'pending';
 
@@ -108,7 +127,7 @@ export const GoalRowHeader = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setIsEditing(true)}>
+          <DropdownMenuItem onClick={handleOpenEdit}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </DropdownMenuItem>
@@ -158,6 +177,32 @@ export const GoalRowHeader = ({
                   className="font-mono"
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Target End Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !editTargetEndDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editTargetEndDate ? format(editTargetEndDate, 'PPP') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editTargetEndDate}
+                    onSelect={setEditTargetEndDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <div className="flex justify-end gap-2">

@@ -51,7 +51,7 @@ export const MISSED_REASONS = [
   'Priority Shift',
   'Late Wakeup',
   'Early Sleep',
-  'Late Return',
+  'Late Office Return',
   'Overslept',
   'Vacation',
   'Holiday',

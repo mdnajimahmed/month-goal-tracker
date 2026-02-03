@@ -4,7 +4,7 @@ import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Flame, CheckCircle2, XCircle, AlertTriangle, Target, Clock, Calendar, Flag } from 'lucide-react';
+import { ArrowLeft, Flame, CheckCircle2, XCircle, AlertTriangle, Target, Clock, Calendar, Flag, TrendingDown, History, Tag } from 'lucide-react';
 import { format, subDays, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -81,6 +81,50 @@ const GoalAnalyticsPage = () => {
       endDateInfo,
     };
   }, [goal]);
+
+  // Calculate consecutive miss streak and last hit info
+  const streakInfo = useMemo(() => {
+    if (!goalId) return { consecutiveMisses: 0, lastHitDaysAgo: null, recentReasons: [] };
+    
+    const today = new Date();
+    let consecutiveMisses = 0;
+    let lastHitDaysAgo: number | null = null;
+    const recentReasonsSet: string[] = [];
+    
+    // Look back up to 90 days
+    for (let i = 0; i < 90; i++) {
+      const date = subDays(today, i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
+      
+      if (entry?.status === 'hit') {
+        if (lastHitDaysAgo === null) {
+          lastHitDaysAgo = i;
+        }
+        break; // Stop counting consecutive misses
+      } else if (entry?.status === 'miss') {
+        consecutiveMisses++;
+        if (entry.missedReason && recentReasonsSet.length < 3 && !recentReasonsSet.includes(entry.missedReason)) {
+          recentReasonsSet.push(entry.missedReason);
+        }
+      }
+    }
+    
+    // If we never found a hit, look further for the last hit
+    if (lastHitDaysAgo === null) {
+      for (let i = 0; i < 365; i++) {
+        const date = subDays(today, i);
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
+        if (entry?.status === 'hit') {
+          lastHitDaysAgo = i;
+          break;
+        }
+      }
+    }
+    
+    return { consecutiveMisses, lastHitDaysAgo, recentReasons: recentReasonsSet };
+  }, [goalId, monthData.entries]);
 
   if (!goal || !analytics) {
     return (
@@ -235,6 +279,64 @@ const GoalAnalyticsPage = () => {
                       {goalInfo.endDateInfo.isOverdue 
                         ? `${Math.abs(goalInfo.endDateInfo.daysToGo)} days overdue` 
                         : `${goalInfo.endDateInfo.daysToGo} days to go`}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {streakInfo.consecutiveMisses > 0 && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Consecutive Misses</CardTitle>
+                    <TrendingDown className="h-4 w-4 text-rag-red" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold font-mono text-rag-red">
+                      {streakInfo.consecutiveMisses}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      days in a row
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {streakInfo.lastHitDaysAgo !== null && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Last Completed</CardTitle>
+                    <History className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold font-mono">
+                      {streakInfo.lastHitDaysAgo === 0 ? 'Today' : `${streakInfo.lastHitDaysAgo}d`}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {streakInfo.lastHitDaysAgo === 0 ? 'Great job!' : 'days ago'}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {streakInfo.recentReasons.length > 0 && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Recent Miss Reasons</CardTitle>
+                    <Tag className="h-4 w-4 text-rag-amber" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-1">
+                      {streakInfo.recentReasons.map((reason) => (
+                        <span
+                          key={reason}
+                          className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium"
+                        >
+                          {reason}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Latest blockers
                     </p>
                   </CardContent>
                 </Card>
