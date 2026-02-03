@@ -167,37 +167,39 @@ export const GoalGrid = () => {
 
       {/* Grid */}
       <div className="flex-1 overflow-auto scrollbar-thin">
-        <div className="inline-block min-w-full">
+        <div className="min-w-full">
           {/* Day headers */}
           <div className="flex sticky top-0 z-20 bg-card">
-            {/* Empty corner cell */}
-            <div className="sticky left-0 z-30 border-r border-b border-grid-border bg-grid-header min-w-[280px]" />
+            {/* Empty corner cell - matches GoalRowHeader width */}
+            <div className="sticky left-0 z-30 border-r border-b border-grid-border bg-grid-header w-[280px] shrink-0" />
             
-            {/* Day columns */}
-            {days.map((date) => {
-              const info = getDayInfo(date);
-              return (
-                <div
-                  key={info.date}
-                  className={cn(
-                    'grid-cell grid-header flex flex-col items-center justify-center min-w-[48px] cursor-pointer',
-                    !info.isOfficeDay && 'bg-day-nonoffice',
-                    info.isToday && 'bg-day-today'
-                  )}
-                  onClick={() => handleSelectDay(info.date)}
-                  onDoubleClick={() => {
-                    // Toggle non-office day for current month only
-                    if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
-                      toggleNonOfficeDay(info.dayNumber);
-                    }
-                  }}
-                  title="Click to view day details. Double-click to toggle office/non-office day."
-                >
-                  <span className="text-xs">{info.dayName}</span>
-                  <span className="font-mono font-semibold">{info.dayNumber}</span>
-                </div>
-              );
-            })}
+            {/* Day columns - use flex-1 for equal distribution */}
+            <div className="flex flex-1">
+              {days.map((date) => {
+                const info = getDayInfo(date);
+                return (
+                  <div
+                    key={info.date}
+                    className={cn(
+                      'grid-cell grid-header flex flex-col items-center justify-center flex-1 min-w-[60px] cursor-pointer',
+                      !info.isOfficeDay && 'bg-day-nonoffice',
+                      info.isToday && 'bg-day-today'
+                    )}
+                    onClick={() => handleSelectDay(info.date)}
+                    onDoubleClick={() => {
+                      // Toggle non-office day for current month only
+                      if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
+                        toggleNonOfficeDay(info.dayNumber);
+                      }
+                    }}
+                    title="Click to view day details. Double-click to toggle office/non-office day."
+                  >
+                    <span className="text-xs">{info.dayName}</span>
+                    <span className="font-mono font-semibold">{info.dayNumber}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Goal rows */}
@@ -214,25 +216,28 @@ export const GoalGrid = () => {
                   onViewAnalytics={() => handleViewAnalytics(goal.id)}
                 />
                 
-                {days.map((date) => {
-                  const info = getDayInfo(date);
-                  const entry = getEntry(goal.id, info.date);
-                  
-                  return (
-                    <DayCell
-                      key={info.date}
-                      goal={goal}
-                      day={info.dayNumber}
-                      date={info.date}
-                      entry={entry}
-                      isOfficeDay={info.isOfficeDay}
-                      isToday={info.isToday}
-                      isPast={info.isPast}
-                      onToggleStatus={() => toggleDayStatus(goal.id, info.date)}
-                      onUpdateEntry={(updates) => updateEntry(goal.id, info.date, updates)}
-                    />
-                  );
-                })}
+                {/* Day cells container - matches header structure */}
+                <div className="flex flex-1">
+                  {days.map((date) => {
+                    const info = getDayInfo(date);
+                    const entry = getEntry(goal.id, info.date);
+                    
+                    return (
+                      <DayCell
+                        key={info.date}
+                        goal={goal}
+                        day={info.dayNumber}
+                        date={info.date}
+                        entry={entry}
+                        isOfficeDay={info.isOfficeDay}
+                        isToday={info.isToday}
+                        isPast={info.isPast}
+                        onToggleStatus={() => toggleDayStatus(goal.id, info.date)}
+                        onUpdateEntry={(updates) => updateEntry(goal.id, info.date, updates)}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             );
           })}

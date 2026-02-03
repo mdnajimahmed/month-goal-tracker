@@ -97,7 +97,7 @@ export const GoalRowHeader = ({
                     analytics.completionRate > 0 ? 'miss' : 'pending';
 
   return (
-    <div className="sticky left-0 z-10 flex items-center gap-3 border-r border-b border-grid-border bg-card px-3 py-2 min-w-[280px]">
+    <div className="sticky left-0 z-10 flex items-center gap-3 border-r border-b border-grid-border bg-card px-3 py-2 w-[280px] shrink-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-sm truncate">{goal.title}</h3>
