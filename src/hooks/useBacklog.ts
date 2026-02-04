@@ -66,15 +66,22 @@ export const useBacklog = () => {
   };
 
   const getItemsByCategory = (category: BacklogCategory) => {
-    return items
-      .filter(item => item.category === category)
-      .sort((a, b) => {
-        // Sort by priority first (high > medium > low), then by date
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-        if (priorityDiff !== 0) return priorityDiff;
-        return a.tentativeStartDate.localeCompare(b.tentativeStartDate);
-      });
+    return items.filter(item => item.category === category);
+  };
+
+  const reorderItems = (category: BacklogCategory, draggedId: string, targetId: string) => {
+    const categoryItems = items.filter(item => item.category === category);
+    const otherItems = items.filter(item => item.category !== category);
+    
+    const draggedIndex = categoryItems.findIndex(item => item.id === draggedId);
+    const targetIndex = categoryItems.findIndex(item => item.id === targetId);
+    
+    if (draggedIndex === -1 || targetIndex === -1) return;
+    
+    const [draggedItem] = categoryItems.splice(draggedIndex, 1);
+    categoryItems.splice(targetIndex, 0, draggedItem);
+    
+    saveItems([...otherItems, ...categoryItems]);
   };
 
   return {
@@ -83,5 +90,6 @@ export const useBacklog = () => {
     updateItem,
     deleteItem,
     getItemsByCategory,
+    reorderItems,
   };
 };
