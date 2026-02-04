@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { BACKLOG_CATEGORIES, BacklogCategory, BacklogItem } from '@/types/backlog';
+import { BACKLOG_CATEGORIES, BACKLOG_PRIORITIES, BacklogCategory, BacklogPriority, BacklogItem } from '@/types/backlog';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface AddBacklogDialogProps {
   onAdd: (item: Omit<BacklogItem, 'id' | 'createdAt'>) => void;
@@ -18,6 +19,7 @@ export const AddBacklogDialog = ({ onAdd }: AddBacklogDialogProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<BacklogCategory>('concepts');
+  const [priority, setPriority] = useState<BacklogPriority>('medium');
   const [tentativeStartDate, setTentativeStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -28,12 +30,14 @@ export const AddBacklogDialog = ({ onAdd }: AddBacklogDialogProps) => {
       title: title.trim(),
       description: description.trim() || undefined,
       category,
+      priority,
       tentativeStartDate,
     });
 
     setTitle('');
     setDescription('');
     setCategory('concepts');
+    setPriority('medium');
     setTentativeStartDate(format(new Date(), 'yyyy-MM-dd'));
     setOpen(false);
   };
@@ -80,6 +84,24 @@ export const AddBacklogDialog = ({ onAdd }: AddBacklogDialogProps) => {
                 {BACKLOG_CATEGORIES.map((cat) => (
                   <SelectItem key={cat.key} value={cat.key}>
                     {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="priority">Priority</Label>
+            <Select value={priority} onValueChange={(v) => setPriority(v as BacklogPriority)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BACKLOG_PRIORITIES.map((p) => (
+                  <SelectItem key={p.key} value={p.key}>
+                    <div className="flex items-center gap-2">
+                      <div className={cn('w-2 h-2 rounded-full', p.color)} />
+                      {p.label}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

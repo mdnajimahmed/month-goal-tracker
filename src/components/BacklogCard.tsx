@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { BacklogItem, BACKLOG_CATEGORIES, BacklogCategory } from '@/types/backlog';
+import { BacklogItem, BACKLOG_CATEGORIES, BACKLOG_PRIORITIES, BacklogCategory, BacklogPriority } from '@/types/backlog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash2, X, Check, Calendar } from 'lucide-react';
+import { Pencil, Trash2, X, Check, Calendar, Flag } from 'lucide-react';
 import { differenceInMonths, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -38,12 +38,19 @@ const statusStyles = {
   red: 'border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20',
 };
 
+const priorityColors = {
+  high: 'text-red-600 dark:text-red-400',
+  medium: 'text-yellow-600 dark:text-yellow-400',
+  low: 'text-blue-600 dark:text-blue-400',
+};
+
 export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDescription, setEditDescription] = useState(item.description || '');
   const [editDate, setEditDate] = useState(item.tentativeStartDate);
   const [editCategory, setEditCategory] = useState<BacklogCategory>(item.category);
+  const [editPriority, setEditPriority] = useState<BacklogPriority>(item.priority);
 
   const status = getDateStatus(item.tentativeStartDate);
 
@@ -53,6 +60,7 @@ export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
       description: editDescription || undefined,
       tentativeStartDate: editDate,
       category: editCategory,
+      priority: editPriority,
     });
     setIsEditing(false);
   };
@@ -62,6 +70,7 @@ export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
     setEditDescription(item.description || '');
     setEditDate(item.tentativeStartDate);
     setEditCategory(item.category);
+    setEditPriority(item.priority);
     setIsEditing(false);
   };
 
@@ -99,6 +108,21 @@ export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
               ))}
             </SelectContent>
           </Select>
+          <Select value={editPriority} onValueChange={(v) => setEditPriority(v as BacklogPriority)}>
+            <SelectTrigger className="text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {BACKLOG_PRIORITIES.map((p) => (
+                <SelectItem key={p.key} value={p.key}>
+                  <div className="flex items-center gap-2">
+                    <div className={cn('w-2 h-2 rounded-full', p.color)} />
+                    {p.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="flex gap-1 justify-end">
             <Button size="sm" variant="ghost" onClick={handleCancel}>
               <X className="h-4 w-4" />
@@ -117,11 +141,14 @@ export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
       <CardContent className="p-3">
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-sm truncate">{item.title}</h4>
+            <div className="flex items-center gap-2">
+              <Flag className={cn('h-3 w-3 shrink-0', priorityColors[item.priority])} />
+              <h4 className="font-medium text-sm truncate">{item.title}</h4>
+            </div>
             {item.description && (
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2 ml-5">{item.description}</p>
             )}
-            <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground ml-5">
               <Calendar className="h-3 w-3" />
               <span>{format(parseISO(item.tentativeStartDate), 'MMM d, yyyy')}</span>
             </div>
