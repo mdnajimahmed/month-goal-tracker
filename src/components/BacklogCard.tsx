@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash2, X, Check, Calendar, Flag } from 'lucide-react';
+import { Pencil, Trash2, X, Check, Calendar, GripVertical } from 'lucide-react';
 import { differenceInMonths, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,10 @@ interface BacklogCardProps {
   item: BacklogItem;
   onUpdate: (id: string, updates: Partial<Omit<BacklogItem, 'id' | 'createdAt'>>) => void;
   onDelete: (id: string) => void;
+  onDragStart: (e: React.DragEvent, id: string) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, id: string) => void;
+  isDragging?: boolean;
 }
 
 const getDateStatus = (tentativeStartDate: string): 'green' | 'yellow' | 'red' => {
@@ -38,13 +42,13 @@ const statusStyles = {
   red: 'border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20',
 };
 
-const priorityColors = {
-  high: 'text-red-600 dark:text-red-400',
-  medium: 'text-yellow-600 dark:text-yellow-400',
-  low: 'text-blue-600 dark:text-blue-400',
+const priorityBadge = {
+  high: { letter: 'H', bg: 'bg-red-500', text: 'text-white' },
+  medium: { letter: 'M', bg: 'bg-yellow-500', text: 'text-white' },
+  low: { letter: 'L', bg: 'bg-blue-500', text: 'text-white' },
 };
 
-export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
+export const BacklogCard = ({ item, onUpdate, onDelete, onDragStart, onDragOver, onDrop, isDragging }: BacklogCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDescription, setEditDescription] = useState(item.description || '');
@@ -53,6 +57,7 @@ export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
   const [editPriority, setEditPriority] = useState<BacklogPriority>(item.priority);
 
   const status = getDateStatus(item.tentativeStartDate);
+  const badge = priorityBadge[item.priority];
 
   const handleSave = () => {
     onUpdate(item.id, {
@@ -116,7 +121,9 @@ export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
               {BACKLOG_PRIORITIES.map((p) => (
                 <SelectItem key={p.key} value={p.key}>
                   <div className="flex items-center gap-2">
-                    <div className={cn('w-2 h-2 rounded-full', p.color)} />
+                    <div className={cn('w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white', p.color)}>
+                      {p.key[0].toUpperCase()}
+                    </div>
                     {p.label}
                   </div>
                 </SelectItem>
@@ -137,20 +144,33 @@ export const BacklogCard = ({ item, onUpdate, onDelete }: BacklogCardProps) => {
   }
 
   return (
-    <Card className={cn('shadow-sm hover:shadow-md transition-shadow', statusStyles[status])}>
+    <Card 
+      className={cn(
+        'shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing',
+        statusStyles[status],
+        isDragging && 'opacity-50'
+      )}
+      draggable
+      onDragStart={(e) => onDragStart(e, item.id)}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop(e, item.id)}
+    >
       <CardContent className="p-3">
         <div className="flex justify-between items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <Flag className={cn('h-3 w-3 shrink-0', priorityColors[item.priority])} />
-              <h4 className="font-medium text-sm truncate">{item.title}</h4>
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0', badge.bg, badge.text)}>
+              {badge.letter}
             </div>
-            {item.description && (
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2 ml-5">{item.description}</p>
-            )}
-            <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground ml-5">
-              <Calendar className="h-3 w-3" />
-              <span>{format(parseISO(item.tentativeStartDate), 'MMM d, yyyy')}</span>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-sm truncate">{item.title}</h4>
+              {item.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+              )}
+              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                <span>{format(parseISO(item.tentativeStartDate), 'MMM d, yyyy')}</span>
+              </div>
             </div>
           </div>
           <div className="flex gap-1 shrink-0">

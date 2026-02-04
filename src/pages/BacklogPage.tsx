@@ -7,7 +7,7 @@ import { AddBacklogDialog } from '@/components/AddBacklogDialog';
 import { BACKLOG_CATEGORIES } from '@/types/backlog';
 
 const BacklogPage = () => {
-  const { addItem, updateItem, deleteItem, getItemsByCategory } = useBacklog();
+  const { addItem, updateItem, deleteItem, getItemsByCategory, reorderItems } = useBacklog();
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -54,6 +54,7 @@ const BacklogPage = () => {
               items={getItemsByCategory(category.key)}
               onUpdate={updateItem}
               onDelete={deleteItem}
+              onReorder={reorderItems}
             />
           ))}
         </div>
