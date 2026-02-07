@@ -27,10 +27,13 @@ const GoalAnalyticsPage = () => {
     if (!goalId) return [];
     
     const today = new Date();
-    const result: { date: string; dateStr: string; dayName: string; status: 'hit' | 'miss' | 'partial' | 'pending' | 'none'; reason?: string }[] = [];
+    const isWeekendGoal = goal?.isWeekendGoal || false;
+    const result: { date: string; dateStr: string; dayName: string; status: 'hit' | 'miss' | 'partial' | 'pending' | 'none'; reason?: string; disabled?: boolean }[] = [];
     
     for (let i = 19; i >= 0; i--) {
       const date = subDays(today, i);
+      const dayOfWeek = date.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const dateStr = format(date, 'yyyy-MM-dd');
       const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
       
@@ -38,13 +41,14 @@ const GoalAnalyticsPage = () => {
         date: dateStr,
         dateStr: format(date, 'd'),
         dayName: format(date, 'EEE'),
-        status: entry?.status || 'none',
+        status: (isWeekendGoal && !isWeekend) ? 'none' : (entry?.status || 'none'),
         reason: entry?.missedReason,
+        disabled: isWeekendGoal && !isWeekend,
       });
     }
     
     return result;
-  }, [goalId, monthData.entries]);
+  }, [goalId, goal, monthData.entries]);
 
   // Get missed reasons for this goal
   const missedReasons = useMemo(() => {
@@ -88,6 +92,7 @@ const GoalAnalyticsPage = () => {
     if (!goalId) return { consecutiveMisses: 0, lastHitDaysAgo: null, recentReasons: [] };
     
     const today = new Date();
+    const isWeekendGoal = goal?.isWeekendGoal || false;
     let consecutiveMisses = 0;
     let lastHitDaysAgo: number | null = null;
     const recentReasonsSet: string[] = [];
@@ -95,6 +100,12 @@ const GoalAnalyticsPage = () => {
     // Look back up to 90 days
     for (let i = 0; i < 90; i++) {
       const date = subDays(today, i);
+      const dayOfWeek = date.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      
+      // Skip weekdays for weekend goals
+      if (isWeekendGoal && !isWeekend) continue;
+      
       const dateStr = format(date, 'yyyy-MM-dd');
       const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
       
@@ -115,6 +126,10 @@ const GoalAnalyticsPage = () => {
     if (lastHitDaysAgo === null) {
       for (let i = 0; i < 365; i++) {
         const date = subDays(today, i);
+        const dayOfWeek = date.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        if (isWeekendGoal && !isWeekend) continue;
+        
         const dateStr = format(date, 'yyyy-MM-dd');
         const entry = monthData.entries.find((e) => e.goalId === goalId && e.date === dateStr);
         if (entry?.status === 'hit') {
@@ -125,7 +140,7 @@ const GoalAnalyticsPage = () => {
     }
     
     return { consecutiveMisses, lastHitDaysAgo, recentReasons: recentReasonsSet };
-  }, [goalId, monthData.entries]);
+  }, [goalId, goal, monthData.entries]);
 
   if (!goal || !analytics) {
     return (
@@ -353,18 +368,19 @@ const GoalAnalyticsPage = () => {
                     {heatmapData.map((day) => (
                       <Tooltip key={day.date}>
                         <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 cursor-pointer">
+                          <div className={cn("flex flex-col items-center gap-1", day.disabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer")}>
                             <span className="text-[10px] text-muted-foreground">{day.dayName}</span>
                             <div
                               className={cn(
-                                'w-8 h-8 rounded flex items-center justify-center text-xs font-mono font-medium transition-transform hover:scale-110',
-                                getStatusColor(day.status),
-                                day.status === 'hit' || day.status === 'miss' || day.status === 'partial' 
+                                'w-8 h-8 rounded flex items-center justify-center text-xs font-mono font-medium transition-transform',
+                                !day.disabled && 'hover:scale-110',
+                                day.disabled ? 'bg-muted/20' : getStatusColor(day.status),
+                                !day.disabled && (day.status === 'hit' || day.status === 'miss' || day.status === 'partial') 
                                   ? 'text-white' 
                                   : 'text-muted-foreground'
                               )}
                             >
-                              {day.dateStr}
+                              {day.disabled ? '—' : day.dateStr}
                             </div>
                           </div>
                         </TooltipTrigger>

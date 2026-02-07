@@ -229,6 +229,21 @@ export const GoalGrid = () => {
                   {days.map((date) => {
                     const info = getDayInfo(date);
                     const entry = getEntry(goal.id, info.date);
+                    const dayOfWeek = date.getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    const isDisabledForGoal = goal.isWeekendGoal && !isWeekend;
+                    
+                    if (isDisabledForGoal) {
+                      return (
+                        <div
+                          key={info.date}
+                          className="grid-cell relative flex flex-col items-center justify-center gap-0.5 min-h-[56px] flex-1 min-w-[60px] bg-muted/20 opacity-30 cursor-not-allowed"
+                          title="Weekend goal — not active on weekdays"
+                        >
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        </div>
+                      );
+                    }
                     
                     return (
                       <DayCell

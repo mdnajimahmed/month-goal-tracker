@@ -7,6 +7,7 @@ export interface Goal {
   tags: string[];
   createdAt: string;
   targetEndDate?: string; // "2025-03-15" format - when goal should be completed
+  isWeekendGoal?: boolean; // If true, only weekends (Sat/Sun) are active
 }
 
 export type DayStatus = 'hit' | 'miss' | 'partial';
