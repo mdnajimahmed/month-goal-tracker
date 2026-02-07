@@ -101,6 +101,11 @@ export const GoalRowHeader = ({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-sm truncate">{goal.title}</h3>
+          {goal.isWeekendGoal && (
+            <span className="inline-flex items-center rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground">
+              WE
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-mono">
           <span>{formatTime(goal.startTime)} - {formatTime(goal.endTime)}</span>

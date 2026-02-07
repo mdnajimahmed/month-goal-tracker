@@ -14,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, CalendarIcon } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
   const [title, setTitle] = useState('');
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('07:30');
+  const [isWeekendGoal, setIsWeekendGoal] = useState(false);
   const [targetEndDate, setTargetEndDate] = useState<Date | undefined>(addMonths(new Date(), 1));
 
   const handleAdd = () => {
@@ -43,12 +45,14 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
       endTime,
       allocatedMinutes: Math.max(0, allocatedMinutes),
       tags: [],
+      isWeekendGoal,
       targetEndDate: targetEndDate ? format(targetEndDate, 'yyyy-MM-dd') : undefined,
     });
 
     setTitle('');
     setStartTime('07:00');
     setEndTime('07:30');
+    setIsWeekendGoal(false);
     setTargetEndDate(addMonths(new Date(), 1));
     onOpenChange(false);
   };
@@ -88,6 +92,20 @@ export const AddGoalDialog = ({ open, onOpenChange, onAddGoal }: AddGoalDialogPr
                 className="font-mono"
               />
             </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="weekendGoal"
+              checked={isWeekendGoal}
+              onCheckedChange={(checked) => setIsWeekendGoal(checked === true)}
+            />
+            <label
+              htmlFor="weekendGoal"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Weekend Goal
+            </label>
+            <span className="text-xs text-muted-foreground">(Only active on Sat & Sun)</span>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Target End Date</label>

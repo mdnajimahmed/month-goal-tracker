@@ -238,23 +238,37 @@ export const useGoalTracker = () => {
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const today = new Date();
     const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
-    const effectiveDays = isCurrentMonth ? Math.min(today.getDate(), daysInMonth) : daysInMonth;
+    const lastDay = isCurrentMonth ? Math.min(today.getDate(), daysInMonth) : daysInMonth;
+
+    // For weekend goals, only count weekend days
+    const isWeekendGoal = goal?.isWeekendGoal || false;
+    let effectiveDays = 0;
+    for (let day = 1; day <= lastDay; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dayOfWeek = date.getDay();
+      if (isWeekendGoal && dayOfWeek !== 0 && dayOfWeek !== 6) continue;
+      effectiveDays++;
+    }
 
     const hitDays = entries.filter((e) => e.status === 'hit').length;
     const missDays = entries.filter((e) => e.status === 'miss').length;
     const partialDays = entries.filter((e) => e.status === 'partial').length;
 
-    // Calculate streaks
+    // Calculate streaks (only counting relevant days)
     let currentStreak = 0;
     let longestStreak = 0;
     let tempStreak = 0;
 
-    for (let day = 1; day <= effectiveDays; day++) {
+    for (let day = 1; day <= lastDay; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dayOfWeek = date.getDay();
+      if (isWeekendGoal && dayOfWeek !== 0 && dayOfWeek !== 6) continue;
+
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const entry = entries.find((e) => e.date === dateStr);
       if (entry?.status === 'hit') {
         tempStreak++;
-        if (day === effectiveDays) currentStreak = tempStreak;
+        if (day === lastDay) currentStreak = tempStreak;
       } else {
         longestStreak = Math.max(longestStreak, tempStreak);
         tempStreak = 0;
