@@ -1,5 +1,7 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnalyticsView } from '@/components/AnalyticsView';
+import { Button } from '@/components/ui/button';
+import { ClipboardList, CheckSquare } from 'lucide-react';
 
 const AnalyticsPage = () => {
   const navigate = useNavigate();
@@ -16,6 +18,20 @@ const AnalyticsPage = () => {
             <h1 className="font-semibold text-sm">Goal Tracker</h1>
             <p className="text-xs text-muted-foreground">Analytics Overview</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/completed">
+              <CheckSquare className="h-4 w-4 mr-1" />
+              Completed
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/backlog">
+              <ClipboardList className="h-4 w-4 mr-1" />
+              Backlogs
+            </Link>
+          </Button>
         </div>
       </header>
 

@@ -9,10 +9,11 @@ interface BacklogColumnProps {
   items: BacklogItem[];
   onUpdate: (id: string, updates: Partial<Omit<BacklogItem, 'id' | 'createdAt'>>) => void;
   onDelete: (id: string) => void;
+  onComplete: (id: string) => void;
   onReorder: (category: BacklogCategory, draggedId: string, targetId: string) => void;
 }
 
-export const BacklogColumn = ({ title, category, items, onUpdate, onDelete, onReorder }: BacklogColumnProps) => {
+export const BacklogColumn = ({ title, category, items, onUpdate, onDelete, onComplete, onReorder }: BacklogColumnProps) => {
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -56,6 +57,7 @@ export const BacklogColumn = ({ title, category, items, onUpdate, onDelete, onRe
                 item={item}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
+                onComplete={onComplete}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}

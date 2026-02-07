@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BacklogItem, BacklogCategory } from '@/types/backlog';
 import { v4 as uuidv4 } from 'uuid';
-import { format, addDays, addMonths, subMonths } from 'date-fns';
+import { format, addDays, addMonths, subMonths, parseISO, isBefore, startOfDay } from 'date-fns';
 
 const STORAGE_KEY = 'ruthless-execution-backlog';
 
@@ -34,12 +34,33 @@ export const useBacklog = () => {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setItems(JSON.parse(stored));
+      const parsed: BacklogItem[] = JSON.parse(stored);
+      // Auto-complete overdue items (past tentativeStartDate and not already completed)
+      const today = startOfDay(new Date());
+      let changed = false;
+      const updated = parsed.map(item => {
+        if (!item.completedAt && isBefore(parseISO(item.tentativeStartDate), today)) {
+          changed = true;
+          return { ...item, completedAt: new Date().toISOString() };
+        }
+        return item;
+      });
+      if (changed) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      }
+      setItems(updated);
     } else {
-      // Initialize with seed data if no existing data
       const seedData = generateSeedData();
-      setItems(seedData);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seedData));
+      // Auto-complete overdue seed items too
+      const today = startOfDay(new Date());
+      const seeded = seedData.map(item => {
+        if (isBefore(parseISO(item.tentativeStartDate), today)) {
+          return { ...item, completedAt: new Date().toISOString() };
+        }
+        return item;
+      });
+      setItems(seeded);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
     }
   }, []);
 
@@ -65,13 +86,27 @@ export const useBacklog = () => {
     saveItems(items.filter(item => item.id !== id));
   };
 
+  const completeItem = (id: string) => {
+    saveItems(items.map(item => item.id === id ? { ...item, completedAt: new Date().toISOString() } : item));
+  };
+
+  const uncompleteItem = (id: string) => {
+    saveItems(items.map(item => item.id === id ? { ...item, completedAt: undefined } : item));
+  };
+
   const getItemsByCategory = (category: BacklogCategory) => {
-    return items.filter(item => item.category === category);
+    return items.filter(item => item.category === category && !item.completedAt);
+  };
+
+  const getCompletedItems = () => {
+    return items.filter(item => !!item.completedAt).sort((a, b) => {
+      return new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime();
+    });
   };
 
   const reorderItems = (category: BacklogCategory, draggedId: string, targetId: string) => {
-    const categoryItems = items.filter(item => item.category === category);
-    const otherItems = items.filter(item => item.category !== category);
+    const categoryItems = items.filter(item => item.category === category && !item.completedAt);
+    const otherItems = items.filter(item => item.category !== category || !!item.completedAt);
     
     const draggedIndex = categoryItems.findIndex(item => item.id === draggedId);
     const targetIndex = categoryItems.findIndex(item => item.id === targetId);
@@ -89,7 +124,10 @@ export const useBacklog = () => {
     addItem,
     updateItem,
     deleteItem,
+    completeItem,
+    uncompleteItem,
     getItemsByCategory,
+    getCompletedItems,
     reorderItems,
   };
 };

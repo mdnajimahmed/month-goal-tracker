@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBacklog } from '@/hooks/useBacklog';
 import { BacklogColumn } from '@/components/BacklogColumn';
@@ -7,7 +7,7 @@ import { AddBacklogDialog } from '@/components/AddBacklogDialog';
 import { BACKLOG_CATEGORIES } from '@/types/backlog';
 
 const BacklogPage = () => {
-  const { addItem, updateItem, deleteItem, getItemsByCategory, reorderItems } = useBacklog();
+  const { addItem, updateItem, deleteItem, completeItem, getItemsByCategory, reorderItems } = useBacklog();
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -39,6 +39,12 @@ const BacklogPage = () => {
               <span>&gt;1 month</span>
             </div>
           </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/completed">
+              <CheckSquare className="h-4 w-4 mr-1" />
+              Completed
+            </Link>
+          </Button>
           <AddBacklogDialog onAdd={addItem} />
         </div>
       </header>
@@ -54,6 +60,7 @@ const BacklogPage = () => {
               items={getItemsByCategory(category.key)}
               onUpdate={updateItem}
               onDelete={deleteItem}
+              onComplete={completeItem}
               onReorder={reorderItems}
             />
           ))}

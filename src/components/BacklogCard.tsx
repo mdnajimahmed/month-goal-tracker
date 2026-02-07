@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash2, X, Check, Calendar, GripVertical } from 'lucide-react';
+import { Pencil, Trash2, X, Check, Calendar, GripVertical, CheckCircle2 } from 'lucide-react';
 import { differenceInMonths, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ interface BacklogCardProps {
   item: BacklogItem;
   onUpdate: (id: string, updates: Partial<Omit<BacklogItem, 'id' | 'createdAt'>>) => void;
   onDelete: (id: string) => void;
+  onComplete?: (id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, id: string) => void;
@@ -48,7 +49,7 @@ const priorityBadge = {
   low: { letter: 'L', bg: 'bg-blue-500', text: 'text-white' },
 };
 
-export const BacklogCard = ({ item, onUpdate, onDelete, onDragStart, onDragOver, onDrop, isDragging }: BacklogCardProps) => {
+export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart, onDragOver, onDrop, isDragging }: BacklogCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDescription, setEditDescription] = useState(item.description || '');
@@ -174,6 +175,11 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onDragStart, onDragOver,
             </div>
           </div>
           <div className="flex gap-1 shrink-0">
+            {onComplete && (
+              <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => onComplete(item.id)} title="Mark complete">
+                <CheckCircle2 className="h-3 w-3" />
+              </Button>
+            )}
             <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setIsEditing(true)}>
               <Pencil className="h-3 w-3" />
             </Button>

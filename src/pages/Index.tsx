@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { GoalGrid } from '@/components/GoalGrid';
 import { Button } from '@/components/ui/button';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, CheckSquare } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -17,12 +17,20 @@ const Index = () => {
             <p className="text-xs text-muted-foreground">Self-discipline applied to priorities</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/backlog">
-            <ClipboardList className="h-4 w-4 mr-1" />
-            Backlogs
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/completed">
+              <CheckSquare className="h-4 w-4 mr-1" />
+              Completed
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/backlog">
+              <ClipboardList className="h-4 w-4 mr-1" />
+              Backlogs
+            </Link>
+          </Button>
+        </div>
       </header>
 
       {/* Main content */}

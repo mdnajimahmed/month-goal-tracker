@@ -9,6 +9,7 @@ export interface BacklogItem {
   priority: BacklogPriority;
   tentativeStartDate: string; // "2025-03-15" format
   createdAt: string;
+  completedAt?: string; // ISO date string when item was completed
 }
 
 export const BACKLOG_CATEGORIES: { key: BacklogCategory; label: string }[] = [
