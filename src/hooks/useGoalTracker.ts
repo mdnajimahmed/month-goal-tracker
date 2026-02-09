@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useCallback, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Goal,
   DayEntry,
@@ -10,11 +10,7 @@ import {
   MonthAnalytics,
   isGoalActiveOnDay,
 } from '@/types/goals';
-import { generateSeedData } from '@/lib/seedData';
-
-const STORAGE_KEY = 'goal-tracker-data';
-
-const getMonthKey = (year: number, month: number) => `${year}-${month}`;
+import { goalsApi } from '@/lib/api/goals';
 
 const getDaysInMonth = (year: number, month: number) => {
   return new Date(year, month + 1, 0).getDate();
@@ -33,101 +29,143 @@ const getWeekendDays = (year: number, month: number): number[] => {
   return days;
 };
 
+const formatDate = (year: number, month: number, day: number): string => {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
 export const useGoalTracker = () => {
+  const queryClient = useQueryClient();
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth());
-  const [allMonthData, setAllMonthData] = useState<Record<string, MonthData>>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        // If data exists and has content, use it
-        if (Object.keys(parsed).length > 0) {
-          return parsed;
-        }
-      } catch {
-        // Fall through to seed data
-      }
-    }
-    // Generate seed data for first-time users
-    return generateSeedData();
+
+  // Fetch all goals
+  const { data: goals = [], isLoading: goalsLoading } = useQuery({
+    queryKey: ['goals'],
+    queryFn: () => goalsApi.getAll(),
   });
 
-  const monthKey = getMonthKey(currentYear, currentMonth);
+  // Fetch entries for current month
+  const startDate = formatDate(currentYear, currentMonth, 1);
+  const endDate = formatDate(currentYear, currentMonth, getDaysInMonth(currentYear, currentMonth));
+  
+  const { data: entries = [], isLoading: entriesLoading } = useQuery({
+    queryKey: ['day-entries', startDate, endDate],
+    queryFn: () => goalsApi.getEntriesByDateRange(startDate, endDate),
+  });
 
-  const monthData: MonthData = allMonthData[monthKey] || {
+  // Create goal mutation
+  const createGoalMutation = useMutation({
+    mutationFn: goalsApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+    },
+  });
+
+  // Update goal mutation
+  const updateGoalMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Goal> }) =>
+      goalsApi.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+    },
+  });
+
+  // Delete goal mutation
+  const deleteGoalMutation = useMutation({
+    mutationFn: goalsApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['day-entries'] });
+    },
+  });
+
+  // Upsert entry mutation
+  const upsertEntryMutation = useMutation({
+    mutationFn: goalsApi.upsertEntry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['day-entries'] });
+    },
+  });
+
+  // Update entry mutation
+  const updateEntryMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<DayEntry> }) =>
+      goalsApi.updateEntry(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['day-entries'] });
+    },
+  });
+
+  // Delete entry mutation
+  const deleteEntryMutation = useMutation({
+    mutationFn: goalsApi.deleteEntry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['day-entries'] });
+    },
+  });
+
+  // Filter goals for current month (based on creation date or target month)
+  // For now, we'll show all goals and let the user filter by month if needed
+  // In a real app, you might want to add a month field to goals
+  const monthGoals = goals;
+
+  const monthEntries = entries.filter((entry) => {
+    const entryYear = parseInt(entry.date.split('-')[0]);
+    const entryMonth = parseInt(entry.date.split('-')[1]) - 1;
+    return entryYear === currentYear && entryMonth === currentMonth;
+  });
+
+  const monthData: MonthData = {
     year: currentYear,
     month: currentMonth,
-    goals: [],
-    entries: [],
+    goals: monthGoals,
+    entries: monthEntries,
     nonOfficeDays: getWeekendDays(currentYear, currentMonth),
   };
 
-  // Persist to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allMonthData));
-  }, [allMonthData]);
-
-  const updateMonthData = useCallback((updater: (data: MonthData) => MonthData) => {
-    setAllMonthData((prev) => ({
-      ...prev,
-      [monthKey]: updater(prev[monthKey] || {
-        year: currentYear,
-        month: currentMonth,
-        goals: [],
-        entries: [],
-        nonOfficeDays: getWeekendDays(currentYear, currentMonth),
-      }),
-    }));
-  }, [monthKey, currentYear, currentMonth]);
-
   // Goal CRUD
-  const addGoal = useCallback((goal: Omit<Goal, 'id' | 'createdAt'>) => {
-    const newGoal: Goal = {
-      ...goal,
-      id: uuidv4(),
-      createdAt: new Date().toISOString(),
-    };
-    updateMonthData((data) => ({
-      ...data,
-      goals: [...data.goals, newGoal],
-    }));
-    return newGoal;
-  }, [updateMonthData]);
+  const addGoal = useCallback(
+    async (goal: Omit<Goal, 'id' | 'createdAt'>) => {
+      return createGoalMutation.mutateAsync(goal);
+    },
+    [createGoalMutation]
+  );
 
-  const updateGoal = useCallback((goalId: string, updates: Partial<Goal>) => {
-    updateMonthData((data) => ({
-      ...data,
-      goals: data.goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g)),
-    }));
-  }, [updateMonthData]);
+  const updateGoal = useCallback(
+    async (goalId: string, updates: Partial<Goal>) => {
+      return updateGoalMutation.mutateAsync({ id: goalId, updates });
+    },
+    [updateGoalMutation]
+  );
 
-  const deleteGoal = useCallback((goalId: string) => {
-    updateMonthData((data) => ({
-      ...data,
-      goals: data.goals.filter((g) => g.id !== goalId),
-      entries: data.entries.filter((e) => e.goalId !== goalId),
-    }));
-  }, [updateMonthData]);
+  const deleteGoal = useCallback(
+    async (goalId: string) => {
+      return deleteGoalMutation.mutateAsync(goalId);
+    },
+    [deleteGoalMutation]
+  );
 
   // Entry CRUD
-  const getEntry = useCallback((goalId: string, date: string): DayEntry | undefined => {
-    return monthData.entries.find((e) => e.goalId === goalId && e.date === date);
-  }, [monthData.entries]);
+  const getEntry = useCallback(
+    (goalId: string, date: string): DayEntry | undefined => {
+      return monthEntries.find((e) => e.goalId === goalId && e.date === date);
+    },
+    [monthEntries]
+  );
 
-  const updateEntry = useCallback((goalId: string, date: string, updates: Partial<DayEntry>) => {
-    updateMonthData((data) => {
-      const existingIndex = data.entries.findIndex(
-        (e) => e.goalId === goalId && e.date === date
-      );
-
-      if (existingIndex >= 0) {
-        const newEntries = [...data.entries];
-        newEntries[existingIndex] = { ...newEntries[existingIndex], ...updates };
-        return { ...data, entries: newEntries };
+  const updateEntry = useCallback(
+    async (goalId: string, date: string, updates: Partial<DayEntry>) => {
+      const existingEntry = getEntry(goalId, date);
+      
+      if (existingEntry) {
+        // Update existing entry
+        return updateEntryMutation.mutateAsync({
+          id: existingEntry.id,
+          updates,
+        });
       } else {
-        const newEntry: DayEntry = {
-          id: uuidv4(),
+        // Create new entry
+        const newEntry: Omit<DayEntry, 'id'> = {
           goalId,
           date,
           status: 'miss',
@@ -136,52 +174,72 @@ export const useGoalTracker = () => {
           timeBlocks: [],
           ...updates,
         };
-        return { ...data, entries: [...data.entries, newEntry] };
+        return upsertEntryMutation.mutateAsync(newEntry);
       }
-    });
-  }, [updateMonthData]);
+    },
+    [getEntry, updateEntryMutation, upsertEntryMutation]
+  );
 
-  const toggleDayStatus = useCallback((goalId: string, date: string) => {
-    const entry = getEntry(goalId, date);
-    const currentStatus: DayStatus = entry?.status || 'miss';
-    const statusOrder: DayStatus[] = ['hit', 'partial', 'miss'];
-    const nextIndex = (statusOrder.indexOf(currentStatus) + 1) % statusOrder.length;
-    updateEntry(goalId, date, { status: statusOrder[nextIndex] });
-  }, [getEntry, updateEntry]);
+  const toggleDayStatus = useCallback(
+    async (goalId: string, date: string) => {
+      const entry = getEntry(goalId, date);
+      const currentStatus: DayStatus = entry?.status || 'miss';
+      const statusOrder: DayStatus[] = ['hit', 'partial', 'miss'];
+      const nextIndex = (statusOrder.indexOf(currentStatus) + 1) % statusOrder.length;
+      await updateEntry(goalId, date, { status: statusOrder[nextIndex] });
+    },
+    [getEntry, updateEntry]
+  );
 
   // Time blocks
-  const addTimeBlock = useCallback((goalId: string, date: string, block: Omit<TimeBlock, 'id'>) => {
-    const entry = getEntry(goalId, date);
-    const newBlock: TimeBlock = { ...block, id: uuidv4() };
-    const timeBlocks = [...(entry?.timeBlocks || []), newBlock];
-    updateEntry(goalId, date, { timeBlocks });
-  }, [getEntry, updateEntry]);
+  const addTimeBlock = useCallback(
+    async (goalId: string, date: string, block: Omit<TimeBlock, 'id'>) => {
+      const entry = getEntry(goalId, date);
+      const newBlock: TimeBlock = { ...block, id: crypto.randomUUID() };
+      const timeBlocks = [...(entry?.timeBlocks || []), newBlock];
+      await updateEntry(goalId, date, { timeBlocks });
+    },
+    [getEntry, updateEntry]
+  );
 
-  const removeTimeBlock = useCallback((goalId: string, date: string, blockId: string) => {
-    const entry = getEntry(goalId, date);
-    if (entry) {
-      const timeBlocks = entry.timeBlocks.filter((b) => b.id !== blockId);
-      updateEntry(goalId, date, { timeBlocks });
-    }
-  }, [getEntry, updateEntry]);
+  const removeTimeBlock = useCallback(
+    async (goalId: string, date: string, blockId: string) => {
+      const entry = getEntry(goalId, date);
+      if (entry) {
+        const timeBlocks = entry.timeBlocks.filter((b) => b.id !== blockId);
+        await updateEntry(goalId, date, { timeBlocks });
+      }
+    },
+    [getEntry, updateEntry]
+  );
 
-  // Non-office days
-  const toggleNonOfficeDay = useCallback((day: number) => {
-    updateMonthData((data) => {
-      const isNonOffice = data.nonOfficeDays.includes(day);
-      return {
-        ...data,
-        nonOfficeDays: isNonOffice
-          ? data.nonOfficeDays.filter((d) => d !== day)
-          : [...data.nonOfficeDays, day].sort((a, b) => a - b),
-      };
-    });
-  }, [updateMonthData]);
+  // Non-office days (stored locally for now, can be moved to backend later)
+  const [nonOfficeDays, setNonOfficeDays] = useState<number[]>(() =>
+    getWeekendDays(currentYear, currentMonth)
+  );
+
+  // Update non-office days when month changes
+  useEffect(() => {
+    setNonOfficeDays(getWeekendDays(currentYear, currentMonth));
+  }, [currentYear, currentMonth]);
+
+  const toggleNonOfficeDay = useCallback(
+    (day: number) => {
+      setNonOfficeDays((prev) => {
+        const isNonOffice = prev.includes(day);
+        return isNonOffice
+          ? prev.filter((d) => d !== day)
+          : [...prev, day].sort((a, b) => a - b);
+      });
+    },
+    []
+  );
 
   // Month navigation
   const goToMonth = useCallback((year: number, month: number) => {
     setCurrentYear(year);
     setCurrentMonth(month);
+    setNonOfficeDays(getWeekendDays(year, month));
   }, []);
 
   const goToPreviousMonth = useCallback(() => {
@@ -203,120 +261,119 @@ export const useGoalTracker = () => {
   }, [currentMonth]);
 
   // Carry forward goals to next month
-  const carryForwardGoals = useCallback(() => {
+  const carryForwardGoals = useCallback(async () => {
     const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
     const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-    const nextKey = getMonthKey(nextYear, nextMonth);
 
-    setAllMonthData((prev) => {
-      const existingNextMonth = prev[nextKey];
-      const goalsToCarry = monthData.goals.map((g) => ({
-        ...g,
-        id: uuidv4(),
-        createdAt: new Date().toISOString(),
-      }));
-
-      return {
-        ...prev,
-        [nextKey]: {
-          year: nextYear,
-          month: nextMonth,
-          goals: existingNextMonth ? [...existingNextMonth.goals, ...goalsToCarry] : goalsToCarry,
-          entries: existingNextMonth?.entries || [],
-          nonOfficeDays: existingNextMonth?.nonOfficeDays || getWeekendDays(nextYear, nextMonth),
-        },
-      };
-    });
+    // Create copies of current goals for next month
+    for (const goal of monthGoals) {
+      const { id, createdAt, ...goalData } = goal;
+      await addGoal(goalData);
+    }
 
     // Navigate to next month
     goToMonth(nextYear, nextMonth);
-  }, [currentMonth, currentYear, monthData.goals, goToMonth]);
+  }, [currentMonth, currentYear, monthGoals, addGoal, goToMonth]);
 
   // Analytics
-  const calculateGoalAnalytics = useCallback((goalId: string): GoalAnalytics => {
-    const goal = monthData.goals.find((g) => g.id === goalId);
-    const entries = monthData.entries.filter((e) => e.goalId === goalId);
-    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-    const today = new Date();
-    const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() === currentMonth;
-    const lastDay = isCurrentMonth ? Math.min(today.getDate(), daysInMonth) : daysInMonth;
+  const calculateGoalAnalytics = useCallback(
+    (goalId: string): GoalAnalytics => {
+      const goal = monthGoals.find((g) => g.id === goalId);
+      const goalEntries = monthEntries.filter((e) => e.goalId === goalId);
+      const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+      const today = new Date();
+      const isCurrentMonth =
+        today.getFullYear() === currentYear && today.getMonth() === currentMonth;
+      const lastDay = isCurrentMonth
+        ? Math.min(today.getDate(), daysInMonth)
+        : daysInMonth;
 
-    // For scoped goals, only count active days
-    const isWeekendGoal = goal?.isWeekendGoal || false;
-    const isWeekdayGoal = goal?.isWeekdayGoal || false;
-    let effectiveDays = 0;
-    for (let day = 1; day <= lastDay; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      const dayOfWeek = date.getDay();
-      if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
-      effectiveDays++;
-    }
-
-    const hitDays = entries.filter((e) => e.status === 'hit').length;
-    const missDays = entries.filter((e) => e.status === 'miss').length;
-    const partialDays = entries.filter((e) => e.status === 'partial').length;
-
-    // Calculate streaks (only counting relevant days)
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 0;
-
-    for (let day = 1; day <= lastDay; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      const dayOfWeek = date.getDay();
-      if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
-
-      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const entry = entries.find((e) => e.date === dateStr);
-      if (entry?.status === 'hit') {
-        tempStreak++;
-        if (day === lastDay) currentStreak = tempStreak;
-      } else {
-        longestStreak = Math.max(longestStreak, tempStreak);
-        tempStreak = 0;
+      // For scoped goals, only count active days
+      const isWeekendGoal = goal?.isWeekendGoal || false;
+      const isWeekdayGoal = goal?.isWeekdayGoal || false;
+      let effectiveDays = 0;
+      for (let day = 1; day <= lastDay; day++) {
+        const date = new Date(currentYear, currentMonth, day);
+        const dayOfWeek = date.getDay();
+        if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
+        effectiveDays++;
       }
-    }
-    longestStreak = Math.max(longestStreak, tempStreak);
 
-    // Missed reason breakdown
-    const missedReasonBreakdown: Record<string, number> = {};
-    entries.forEach((e) => {
-      if (e.status === 'miss' && e.missedReason) {
-        missedReasonBreakdown[e.missedReason] = (missedReasonBreakdown[e.missedReason] || 0) + 1;
+      const hitDays = goalEntries.filter((e) => e.status === 'hit').length;
+      const missDays = goalEntries.filter((e) => e.status === 'miss').length;
+      const partialDays = goalEntries.filter((e) => e.status === 'partial').length;
+
+      // Calculate streaks
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let tempStreak = 0;
+
+      for (let day = 1; day <= lastDay; day++) {
+        const date = new Date(currentYear, currentMonth, day);
+        const dayOfWeek = date.getDay();
+        if (goal && !isGoalActiveOnDay(goal, dayOfWeek)) continue;
+
+        const dateStr = formatDate(currentYear, currentMonth, day);
+        const entry = goalEntries.find((e) => e.date === dateStr);
+        if (entry?.status === 'hit') {
+          tempStreak++;
+          if (day === lastDay) currentStreak = tempStreak;
+        } else {
+          longestStreak = Math.max(longestStreak, tempStreak);
+          tempStreak = 0;
+        }
       }
-    });
+      longestStreak = Math.max(longestStreak, tempStreak);
 
-    const totalActualMinutes = entries.reduce((sum, e) => sum + e.actualMinutes, 0);
-    const totalAllocatedMinutes = effectiveDays * (goal?.allocatedMinutes || 0);
+      // Missed reason breakdown
+      const missedReasonBreakdown: Record<string, number> = {};
+      goalEntries.forEach((e) => {
+        if (e.status === 'miss' && e.missedReason) {
+          missedReasonBreakdown[e.missedReason] =
+            (missedReasonBreakdown[e.missedReason] || 0) + 1;
+        }
+      });
 
-    return {
-      goalId,
-      totalDays: effectiveDays,
-      hitDays,
-      missDays,
-      partialDays,
-      currentStreak,
-      longestStreak,
-      completionRate: effectiveDays > 0 ? (hitDays / effectiveDays) * 100 : 0,
-      totalAllocatedMinutes,
-      totalActualMinutes,
-      missedReasonBreakdown,
-    };
-  }, [monthData, currentYear, currentMonth]);
+      const totalActualMinutes = goalEntries.reduce(
+        (sum, e) => sum + e.actualMinutes,
+        0
+      );
+      const totalAllocatedMinutes = effectiveDays * (goal?.allocatedMinutes || 0);
+
+      return {
+        goalId,
+        totalDays: effectiveDays,
+        hitDays,
+        missDays,
+        partialDays,
+        currentStreak,
+        longestStreak,
+        completionRate: effectiveDays > 0 ? (hitDays / effectiveDays) * 100 : 0,
+        totalAllocatedMinutes,
+        totalActualMinutes,
+        missedReasonBreakdown,
+      };
+    },
+    [monthGoals, monthEntries, currentYear, currentMonth]
+  );
 
   const calculateMonthAnalytics = useCallback((): MonthAnalytics => {
-    const goalAnalytics = monthData.goals.map((g) => calculateGoalAnalytics(g.id));
+    const goalAnalytics = monthGoals.map((g) => calculateGoalAnalytics(g.id));
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
     // Overall completion rate
     const totalHits = goalAnalytics.reduce((sum, ga) => sum + ga.hitDays, 0);
     const totalDays = goalAnalytics.reduce((sum, ga) => sum + ga.totalDays, 0);
-    const overallCompletionRate = totalDays > 0 ? (totalHits / totalDays) * 100 : 0;
+    const overallCompletionRate =
+      totalDays > 0 ? (totalHits / totalDays) * 100 : 0;
 
     // Best/worst performing goals
-    const sortedByRate = [...goalAnalytics].sort((a, b) => b.completionRate - a.completionRate);
+    const sortedByRate = [...goalAnalytics].sort(
+      (a, b) => b.completionRate - a.completionRate
+    );
     const bestPerformingGoal = sortedByRate[0]?.goalId || null;
-    const worstPerformingGoal = sortedByRate[sortedByRate.length - 1]?.goalId || null;
+    const worstPerformingGoal =
+      sortedByRate[sortedByRate.length - 1]?.goalId || null;
 
     // Most frequent missed reasons
     const reasonCounts: Record<string, number> = {};
@@ -333,15 +390,15 @@ export const useGoalTracker = () => {
     // Daily hit rate
     const dailyHitRate: { date: string; rate: number }[] = [];
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayEntries = monthData.entries.filter((e) => e.date === dateStr);
+      const dateStr = formatDate(currentYear, currentMonth, day);
+      const dayEntries = monthEntries.filter((e) => e.date === dateStr);
       const hits = dayEntries.filter((e) => e.status === 'hit').length;
-      const rate = monthData.goals.length > 0 ? (hits / monthData.goals.length) * 100 : 0;
+      const rate = monthGoals.length > 0 ? (hits / monthGoals.length) * 100 : 0;
       dailyHitRate.push({ date: dateStr, rate });
     }
 
     return {
-      totalGoals: monthData.goals.length,
+      totalGoals: monthGoals.length,
       overallCompletionRate,
       bestPerformingGoal,
       worstPerformingGoal,
@@ -349,14 +406,18 @@ export const useGoalTracker = () => {
       dailyHitRate,
       goalAnalytics,
     };
-  }, [monthData, currentYear, currentMonth, calculateGoalAnalytics]);
+  }, [monthGoals, monthEntries, currentYear, currentMonth, calculateGoalAnalytics]);
 
   return {
     // State
     currentYear,
     currentMonth,
-    monthData,
+    monthData: {
+      ...monthData,
+      nonOfficeDays,
+    },
     daysInMonth: getDaysInMonth(currentYear, currentMonth),
+    isLoading: goalsLoading || entriesLoading,
 
     // Goal operations
     addGoal,

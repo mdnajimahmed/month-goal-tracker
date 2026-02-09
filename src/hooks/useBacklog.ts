@@ -1,126 +1,127 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BacklogItem, BacklogCategory } from '@/types/backlog';
-import { v4 as uuidv4 } from 'uuid';
-import { format, addDays, addMonths, subMonths, parseISO, isBefore, startOfDay } from 'date-fns';
-
-const STORAGE_KEY = 'ruthless-execution-backlog';
-
-const generateSeedData = (): BacklogItem[] => {
-  const today = new Date();
-  return [
-    // Certifications
-    { id: uuidv4(), title: 'AWS Solutions Architect', description: 'Professional certification exam prep', category: 'certifications', priority: 'high', tentativeStartDate: format(addDays(today, 14), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 120 },
-    { id: uuidv4(), title: 'Kubernetes CKA', description: 'Certified Kubernetes Administrator', category: 'certifications', priority: 'medium', tentativeStartDate: format(subMonths(today, 2), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 80 },
-    { id: uuidv4(), title: 'Google Cloud Professional', category: 'certifications', priority: 'low', tentativeStartDate: format(addMonths(today, 2), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 100 },
-    // Udemy
-    { id: uuidv4(), title: 'React - Complete Guide', description: 'Maximilian course', category: 'udemy', priority: 'high', tentativeStartDate: format(subMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 40 },
-    { id: uuidv4(), title: 'System Design Masterclass', category: 'udemy', priority: 'medium', tentativeStartDate: format(addDays(today, 7), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 30 },
-    // Books
-    { id: uuidv4(), title: 'Designing Data-Intensive Apps', description: 'Martin Kleppmann', category: 'books', priority: 'high', tentativeStartDate: format(today, 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 50 },
-    { id: uuidv4(), title: 'Clean Architecture', description: 'Robert C. Martin', category: 'books', priority: 'medium', tentativeStartDate: format(addMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 25 },
-    { id: uuidv4(), title: 'The Pragmatic Programmer', category: 'books', priority: 'low', tentativeStartDate: format(subMonths(today, 3), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 20 },
-    // Interview
-    { id: uuidv4(), title: 'LeetCode - Hard Problems', description: 'Complete 50 hard problems', category: 'interview', priority: 'high', tentativeStartDate: format(addDays(today, 3), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 60 },
-    { id: uuidv4(), title: 'System Design Practice', category: 'interview', priority: 'medium', tentativeStartDate: format(subMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 35 },
-    // Concepts
-    { id: uuidv4(), title: 'Event Sourcing & CQRS', description: 'Deep dive into patterns', category: 'concepts', priority: 'medium', tentativeStartDate: format(addMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 15 },
-    { id: uuidv4(), title: 'GraphQL Federation', category: 'concepts', priority: 'low', tentativeStartDate: format(addDays(today, 21), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 10 },
-  ];
-};
+import { backlogApi } from '@/lib/api/backlog';
+import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 
 export const useBacklog = () => {
-  const [items, setItems] = useState<BacklogItem[]>([]);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed: BacklogItem[] = JSON.parse(stored);
-      // Auto-complete overdue items (past tentativeStartDate and not already completed)
+  // Fetch all backlog items
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ['backlog-items'],
+    queryFn: () => backlogApi.getAll(),
+  });
+
+  // Auto-complete overdue items (client-side logic)
+  const processedItems = items.map((item) => {
+    if (!item.completedAt) {
       const today = startOfDay(new Date());
-      let changed = false;
-      const updated = parsed.map(item => {
-        if (!item.completedAt && isBefore(parseISO(item.tentativeStartDate), today)) {
-          changed = true;
-          return { ...item, completedAt: new Date().toISOString() };
-        }
-        return item;
-      });
-      if (changed) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      if (isBefore(parseISO(item.tentativeStartDate), today)) {
+        // Note: This is client-side only. In production, you might want to handle this server-side
+        return { ...item, completedAt: new Date().toISOString() };
       }
-      setItems(updated);
-    } else {
-      const seedData = generateSeedData();
-      // Auto-complete overdue seed items too
-      const today = startOfDay(new Date());
-      const seeded = seedData.map(item => {
-        if (isBefore(parseISO(item.tentativeStartDate), today)) {
-          return { ...item, completedAt: new Date().toISOString() };
-        }
-        return item;
-      });
-      setItems(seeded);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
     }
-  }, []);
+    return item;
+  });
 
-  const saveItems = (newItems: BacklogItem[]) => {
-    setItems(newItems);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+  // Create item mutation
+  const createItemMutation = useMutation({
+    mutationFn: backlogApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backlog-items'] });
+    },
+  });
+
+  // Update item mutation
+  const updateItemMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<BacklogItem> }) =>
+      backlogApi.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backlog-items'] });
+    },
+  });
+
+  // Delete item mutation
+  const deleteItemMutation = useMutation({
+    mutationFn: backlogApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backlog-items'] });
+    },
+  });
+
+  // Complete item mutation
+  const completeItemMutation = useMutation({
+    mutationFn: backlogApi.complete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backlog-items'] });
+    },
+  });
+
+  // Uncomplete item mutation
+  const uncompleteItemMutation = useMutation({
+    mutationFn: backlogApi.uncomplete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backlog-items'] });
+    },
+  });
+
+  const addItem = async (item: Omit<BacklogItem, 'id' | 'createdAt'>) => {
+    return createItemMutation.mutateAsync(item);
   };
 
-  const addItem = (item: Omit<BacklogItem, 'id' | 'createdAt'>) => {
-    const newItem: BacklogItem = {
-      ...item,
-      id: uuidv4(),
-      createdAt: new Date().toISOString(),
-    };
-    saveItems([...items, newItem]);
+  const updateItem = async (id: string, updates: Partial<Omit<BacklogItem, 'id' | 'createdAt'>>) => {
+    return updateItemMutation.mutateAsync({ id, updates });
   };
 
-  const updateItem = (id: string, updates: Partial<Omit<BacklogItem, 'id' | 'createdAt'>>) => {
-    saveItems(items.map(item => item.id === id ? { ...item, ...updates } : item));
+  const deleteItem = async (id: string) => {
+    return deleteItemMutation.mutateAsync(id);
   };
 
-  const deleteItem = (id: string) => {
-    saveItems(items.filter(item => item.id !== id));
+  const completeItem = async (id: string) => {
+    return completeItemMutation.mutateAsync(id);
   };
 
-  const completeItem = (id: string) => {
-    saveItems(items.map(item => item.id === id ? { ...item, completedAt: new Date().toISOString() } : item));
-  };
-
-  const uncompleteItem = (id: string) => {
-    saveItems(items.map(item => item.id === id ? { ...item, completedAt: undefined } : item));
+  const uncompleteItem = async (id: string) => {
+    return uncompleteItemMutation.mutateAsync(id);
   };
 
   const getItemsByCategory = (category: BacklogCategory) => {
-    return items.filter(item => item.category === category && !item.completedAt);
+    return processedItems.filter((item) => item.category === category && !item.completedAt);
   };
 
   const getCompletedItems = () => {
-    return items.filter(item => !!item.completedAt).sort((a, b) => {
-      return new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime();
-    });
+    return processedItems
+      .filter((item) => !!item.completedAt)
+      .sort((a, b) => {
+        return new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime();
+      });
   };
 
+  // Reorder items (client-side only for now)
   const reorderItems = (category: BacklogCategory, draggedId: string, targetId: string) => {
-    const categoryItems = items.filter(item => item.category === category && !item.completedAt);
-    const otherItems = items.filter(item => item.category !== category || !!item.completedAt);
+    const categoryItems = processedItems.filter(
+      (item) => item.category === category && !item.completedAt
+    );
+    const otherItems = processedItems.filter(
+      (item) => item.category !== category || !!item.completedAt
+    );
 
-    const draggedIndex = categoryItems.findIndex(item => item.id === draggedId);
-    const targetIndex = categoryItems.findIndex(item => item.id === targetId);
+    const draggedIndex = categoryItems.findIndex((item) => item.id === draggedId);
+    const targetIndex = categoryItems.findIndex((item) => item.id === targetId);
 
     if (draggedIndex === -1 || targetIndex === -1) return;
 
     const [draggedItem] = categoryItems.splice(draggedIndex, 1);
     categoryItems.splice(targetIndex, 0, draggedItem);
 
-    saveItems([...otherItems, ...categoryItems]);
+    // Note: This doesn't persist order to backend. You'd need to add an order field to the schema.
+    // For now, this is client-side only.
+    queryClient.setQueryData(['backlog-items'], [...otherItems, ...categoryItems]);
   };
 
   return {
-    items,
+    items: processedItems,
+    isLoading,
     addItem,
     updateItem,
     deleteItem,

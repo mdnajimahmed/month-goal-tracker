@@ -10,28 +10,38 @@ import GoalAnalyticsPage from "./pages/GoalAnalyticsPage";
 import BacklogPage from "./pages/BacklogPage";
 import EisenhowerPage from "./pages/EisenhowerPage";
 import NotFound from "./pages/NotFound";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/day/:date" element={<DayPage />} />
-            <Route path="/goal-analytics/:goalId" element={<GoalAnalyticsPage />} />
-            <Route path="/operation" element={<EisenhowerPage />} />
-            <Route path="/vision" element={<BacklogPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/day/:date" element={<DayPage />} />
+              <Route path="/goal-analytics/:goalId" element={<GoalAnalyticsPage />} />
+              <Route path="/operation" element={<EisenhowerPage />} />
+              <Route path="/vision" element={<BacklogPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

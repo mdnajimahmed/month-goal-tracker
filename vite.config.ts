@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    strictPort: false, // If 8080 is in use, try next available port
     hmr: {
       overlay: false,
     },

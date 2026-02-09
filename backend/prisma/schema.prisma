@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Goal {
+  id              String    @id @default(uuid())
+  title           String
+  startTime       String    // "07:00" format
+  endTime         String    // "07:30" format
+  allocatedMinutes Int
+  tags            String[]  @default([])
+  createdAt       DateTime  @default(now())
+  targetEndDate  String?   // "2025-03-15" format
+  isWeekendGoal  Boolean   @default(false)
+  isWeekdayGoal  Boolean   @default(false)
+  dayEntries      DayEntry[]
+  
+  @@index([createdAt])
+}
+
+model DayEntry {
+  id            String   @id @default(uuid())
+  goalId        String
+  goal          Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  date          String   // "2025-01-15" format
+  status        String   // 'hit' | 'miss' | 'partial'
+  actualMinutes Int      @default(0)
+  comment       String   @default("")
+  missedReason  String?
+  timeBlocks    Json     // Array of TimeBlock objects
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@unique([goalId, date])
+  @@index([goalId])
+  @@index([date])
+}
+
+model EisenhowerTask {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  quadrant    String   // 'do-first' | 'schedule' | 'delegate' | 'eliminate'
+  delegateTo  String?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([quadrant])
+  @@index([completedAt])
+}
+
+model BacklogItem {
+  id                String    @id @default(uuid())
+  title             String
+  description       String?
+  category          String    // 'certifications' | 'udemy' | 'books' | 'interview' | 'concepts'
+  priority          String    // 'high' | 'medium' | 'low'
+  tentativeStartDate String   // "2025-03-15" format
+  estimatedHours    Int?
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([category])
+  @@index([priority])
+  @@index([completedAt])
+}

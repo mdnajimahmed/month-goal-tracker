@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Prisma
+backend/prisma/migrations
+
+# CDK
+infrastructure/cdk.out
+infrastructure/*.js
+infrastructure/lib/*.js
+infrastructure/bin/*.js
+infrastructure/*.d.ts
+infrastructure/lib/*.d.ts
+infrastructure/bin/*.d.ts
+
+# Docker
+postgres_data

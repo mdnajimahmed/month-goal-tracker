@@ -1,73 +1,177 @@
-# Welcome to your Lovable project
+# Month Goal Tracker
 
-## Project info
+A smart todo app with execution tracking, Eisenhower matrix for operations, and vision backlog management.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+- **Execution**: Daily tracking of goals with time blocks and analytics
+- **Operation**: Eisenhower matrix for day-to-day unplanned chores
+- **Vision**: Long-term goals and backlog management
 
-There are several ways of editing your application.
+## Architecture
 
-**Use Lovable**
+- **Frontend**: React + TypeScript + Vite + shadcn/ui
+- **Backend**: Node.js + Express + Prisma ORM
+- **Database**: PostgreSQL
+- **Infrastructure**: AWS CDK (Lambda, RDS, S3, CloudFront, API Gateway)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ and npm
+- Docker and Docker Compose
+- AWS CLI configured (for deployment)
+- AWS CDK CLI (`npm install -g aws-cdk`)
 
-**Use your preferred IDE**
+## Local Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Quick Start
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Run everything with one command:
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+npm run dev:full
 ```
 
-**Edit a file directly in GitHub**
+This will:
+1. Start PostgreSQL in Docker
+2. Run database migrations
+3. Start the backend API server (port 3002)
+4. Start the frontend dev server (port 8080, or next available port)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+**Note**: Make sure you have Docker running before executing this command.
 
-**Use GitHub Codespaces**
+### Manual Setup
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+If you prefer to run services separately:
 
-## What technologies are used for this project?
+1. **Start Database**:
+   ```bash
+   docker-compose up -d
+   ```
 
-This project is built with:
+2. **Setup Backend**:
+   ```bash
+   cd backend
+   npm install
+   cp .env.example .env
+   npm run prisma:generate
+   npm run prisma:migrate
+   npm run dev
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+3. **Setup Frontend** (in another terminal):
+   ```bash
+   npm install
+   # Copy .env.example to .env if you want to customize API URL
+   npm run dev
+   ```
 
-## How can I deploy this project?
+The frontend will automatically connect to `http://localhost:3002/api` by default.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### Manual Setup
 
-## Can I connect a custom domain to my Lovable project?
+1. **Start PostgreSQL**:
+   ```bash
+   docker-compose up -d
+   ```
 
-Yes, you can!
+2. **Setup Backend**:
+   ```bash
+   cd backend
+   npm install
+   cp .env.example .env
+   npm run prisma:generate
+   npm run prisma:migrate
+   npm run dev
+   ```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+3. **Setup Frontend** (in another terminal):
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Deployment
+
+Deploy everything to AWS with one command:
+
+```bash
+npm run deploy
+```
+
+This will:
+1. Build the frontend
+2. Build the backend
+3. Build the CDK infrastructure
+4. Deploy everything to AWS
+
+### First Time Setup
+
+Before deploying, you need to bootstrap CDK:
+
+```bash
+cd infrastructure
+npx cdk bootstrap
+cd ..
+```
+
+### Environment Variables
+
+For local development, create `backend/.env`:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/goal_tracker?schema=public"
+NODE_ENV=development
+PORT=3001
+```
+
+For AWS deployment, the database connection is automatically configured via SSM Parameter Store.
+
+## Project Structure
+
+```
+.
+├── backend/              # Express API server
+│   ├── src/
+│   │   ├── routes/      # API routes
+│   │   ├── config/      # Database and env config
+│   │   └── lambda.ts   # Lambda handler
+│   └── prisma/          # Prisma schema and migrations
+├── infrastructure/      # AWS CDK infrastructure
+│   ├── lib/            # CDK stack definitions
+│   └── bin/            # CDK app entry point
+├── scripts/            # Deployment scripts
+└── src/                # Frontend React app
+```
+
+## API Endpoints
+
+- `GET /api/health` - Health check
+- `GET /api/goals` - List all goals
+- `POST /api/goals` - Create a goal
+- `GET /api/day-entries` - List day entries
+- `POST /api/day-entries` - Create/update day entry
+- `GET /api/eisenhower` - List Eisenhower tasks
+- `POST /api/eisenhower` - Create Eisenhower task
+- `GET /api/backlog` - List backlog items
+- `POST /api/backlog` - Create backlog item
+
+## Database Schema
+
+The app uses Prisma ORM with PostgreSQL. Run migrations with:
+
+```bash
+cd backend
+npm run prisma:migrate
+```
+
+View database with Prisma Studio:
+
+```bash
+cd backend
+npm run prisma:studio
+```
+
+## License
+
+MIT
