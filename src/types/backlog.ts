@@ -10,6 +10,7 @@ export interface BacklogItem {
   tentativeStartDate: string; // "2025-03-15" format
   createdAt: string;
   completedAt?: string; // ISO date string when item was completed
+  estimatedHours?: number; // Estimated study hours needed
 }
 
 export const BACKLOG_CATEGORIES: { key: BacklogCategory; label: string }[] = [

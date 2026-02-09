@@ -8,7 +8,7 @@ import { DayCell } from './DayCell';
 import { AddGoalDialog, AddGoalButton } from './AddGoalDialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Grid3X3, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -145,25 +145,6 @@ export const GoalGrid = () => {
           </Button>
         </div>
 
-        <div className="flex items-center gap-1">
-          <Button
-            variant="default"
-            size="sm"
-            className="gap-2"
-          >
-            <Grid3X3 className="h-4 w-4" />
-            Grid
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleViewAnalytics()}
-            className="gap-2"
-          >
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </Button>
-        </div>
       </div>
 
       {/* Grid */}

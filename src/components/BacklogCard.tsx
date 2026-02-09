@@ -4,8 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash2, X, Check, Calendar, GripVertical, CheckCircle2 } from 'lucide-react';
+import { Pencil, Trash2, X, Check, Calendar, GripVertical, CheckCircle2, Clock } from 'lucide-react';
 import { differenceInMonths, parseISO, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -23,18 +24,18 @@ interface BacklogCardProps {
 const getDateStatus = (tentativeStartDate: string): 'green' | 'yellow' | 'red' => {
   const today = new Date();
   const startDate = parseISO(tentativeStartDate);
-  
+
   if (today < startDate) {
-    return 'green'; // Future - on track
+    return 'green';
   }
-  
+
   const monthsOverdue = differenceInMonths(today, startDate);
-  
+
   if (monthsOverdue > 1) {
-    return 'yellow'; // More than 1 month overdue
+    return 'yellow';
   }
-  
-  return 'red'; // Overdue but less than 1 month
+
+  return 'red';
 };
 
 const statusStyles = {
@@ -56,6 +57,7 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart,
   const [editDate, setEditDate] = useState(item.tentativeStartDate);
   const [editCategory, setEditCategory] = useState<BacklogCategory>(item.category);
   const [editPriority, setEditPriority] = useState<BacklogPriority>(item.priority);
+  const [editEstHours, setEditEstHours] = useState<string>(item.estimatedHours?.toString() ?? '');
 
   const status = getDateStatus(item.tentativeStartDate);
   const badge = priorityBadge[item.priority];
@@ -67,6 +69,7 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart,
       tentativeStartDate: editDate,
       category: editCategory,
       priority: editPriority,
+      estimatedHours: editEstHours ? parseFloat(editEstHours) : undefined,
     });
     setIsEditing(false);
   };
@@ -77,6 +80,7 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart,
     setEditDate(item.tentativeStartDate);
     setEditCategory(item.category);
     setEditPriority(item.priority);
+    setEditEstHours(item.estimatedHours?.toString() ?? '');
     setIsEditing(false);
   };
 
@@ -102,6 +106,18 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart,
             onChange={(e) => setEditDate(e.target.value)}
             className="text-sm"
           />
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Est. Hours</Label>
+            <Input
+              type="number"
+              value={editEstHours}
+              onChange={(e) => setEditEstHours(e.target.value)}
+              placeholder="e.g. 40"
+              className="text-sm"
+              min="0"
+              step="0.5"
+            />
+          </div>
           <Select value={editCategory} onValueChange={(v) => setEditCategory(v as BacklogCategory)}>
             <SelectTrigger className="text-sm">
               <SelectValue />
@@ -145,7 +161,7 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart,
   }
 
   return (
-    <Card 
+    <Card
       className={cn(
         'shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing',
         statusStyles[status],
@@ -168,9 +184,17 @@ export const BacklogCard = ({ item, onUpdate, onDelete, onComplete, onDragStart,
               {item.description && (
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
               )}
-              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                <span>{format(parseISO(item.tentativeStartDate), 'MMM d, yyyy')}</span>
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>{format(parseISO(item.tentativeStartDate), 'MMM d, yyyy')}</span>
+                </div>
+                {item.estimatedHours != null && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>{item.estimatedHours}h</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

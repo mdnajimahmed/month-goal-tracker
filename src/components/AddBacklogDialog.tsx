@@ -21,6 +21,7 @@ export const AddBacklogDialog = ({ onAdd }: AddBacklogDialogProps) => {
   const [category, setCategory] = useState<BacklogCategory>('concepts');
   const [priority, setPriority] = useState<BacklogPriority>('medium');
   const [tentativeStartDate, setTentativeStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [estimatedHours, setEstimatedHours] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +33,7 @@ export const AddBacklogDialog = ({ onAdd }: AddBacklogDialogProps) => {
       category,
       priority,
       tentativeStartDate,
+      estimatedHours: estimatedHours ? parseFloat(estimatedHours) : undefined,
     });
 
     setTitle('');
@@ -39,6 +41,7 @@ export const AddBacklogDialog = ({ onAdd }: AddBacklogDialogProps) => {
     setCategory('concepts');
     setPriority('medium');
     setTentativeStartDate(format(new Date(), 'yyyy-MM-dd'));
+    setEstimatedHours('');
     setOpen(false);
   };
 
@@ -74,48 +77,64 @@ export const AddBacklogDialog = ({ onAdd }: AddBacklogDialogProps) => {
               placeholder="Enter description"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={(v) => setCategory(v as BacklogCategory)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {BACKLOG_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.key} value={cat.key}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as BacklogCategory)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BACKLOG_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.key} value={cat.key}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as BacklogPriority)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BACKLOG_PRIORITIES.map((p) => (
+                    <SelectItem key={p.key} value={p.key}>
+                      <div className="flex items-center gap-2">
+                        <div className={cn('w-2 h-2 rounded-full', p.color)} />
+                        {p.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="priority">Priority</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as BacklogPriority)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {BACKLOG_PRIORITIES.map((p) => (
-                  <SelectItem key={p.key} value={p.key}>
-                    <div className="flex items-center gap-2">
-                      <div className={cn('w-2 h-2 rounded-full', p.color)} />
-                      {p.label}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="startDate">Tentative Start Date</Label>
-            <Input
-              id="startDate"
-              type="date"
-              value={tentativeStartDate}
-              onChange={(e) => setTentativeStartDate(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Tentative Start Date</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={tentativeStartDate}
+                onChange={(e) => setTentativeStartDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="estHours">Est. Hours</Label>
+              <Input
+                id="estHours"
+                type="number"
+                value={estimatedHours}
+                onChange={(e) => setEstimatedHours(e.target.value)}
+                placeholder="e.g. 40"
+                min="0"
+                step="0.5"
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

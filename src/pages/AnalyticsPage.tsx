@@ -1,44 +1,51 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalyticsView } from '@/components/AnalyticsView';
-import { Button } from '@/components/ui/button';
-import { ClipboardList, CheckSquare } from 'lucide-react';
+import { OperationAnalytics } from '@/components/OperationAnalytics';
+import { VisionAnalytics } from '@/components/VisionAnalytics';
+import { Target, LayoutGrid, Telescope } from 'lucide-react';
 
 const AnalyticsPage = () => {
-  const navigate = useNavigate();
-
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* App header */}
-      <header className="flex items-center justify-between px-4 py-2 border-b bg-card">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">GT</span>
-          </div>
-          <div>
-            <h1 className="font-semibold text-sm">Goal Tracker</h1>
-            <p className="text-xs text-muted-foreground">Analytics Overview</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/completed">
-              <CheckSquare className="h-4 w-4 mr-1" />
-              Completed
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/backlog">
-              <ClipboardList className="h-4 w-4 mr-1" />
-              Backlogs
-            </Link>
-          </Button>
+    <div className="flex flex-col h-full">
+      <header className="flex items-center gap-3 px-4 py-2 border-b bg-card shrink-0">
+        <SidebarTrigger />
+        <div>
+          <h1 className="font-semibold text-sm">Analytics</h1>
+          <p className="text-xs text-muted-foreground">Performance insights across all categories</p>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-hidden">
-        <AnalyticsView onNavigateToGrid={() => navigate('/')} />
-      </main>
+      <Tabs defaultValue="execution" className="flex flex-col flex-1 overflow-hidden">
+        <div className="px-4 pt-2 shrink-0">
+          <TabsList>
+            <TabsTrigger value="execution" className="flex items-center gap-1.5">
+              <Target className="h-3.5 w-3.5" />
+              Execution
+            </TabsTrigger>
+            <TabsTrigger value="operation" className="flex items-center gap-1.5">
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Operation
+            </TabsTrigger>
+            <TabsTrigger value="vision" className="flex items-center gap-1.5">
+              <Telescope className="h-3.5 w-3.5" />
+              Vision
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="execution" className="flex-1 overflow-hidden mt-0">
+          <AnalyticsView />
+        </TabsContent>
+
+        <TabsContent value="operation" className="flex-1 overflow-hidden mt-0">
+          <OperationAnalytics />
+        </TabsContent>
+
+        <TabsContent value="vision" className="flex-1 overflow-hidden mt-0">
+          <VisionAnalytics />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

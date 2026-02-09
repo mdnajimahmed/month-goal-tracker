@@ -9,22 +9,22 @@ const generateSeedData = (): BacklogItem[] => {
   const today = new Date();
   return [
     // Certifications
-    { id: uuidv4(), title: 'AWS Solutions Architect', description: 'Professional certification exam prep', category: 'certifications', priority: 'high', tentativeStartDate: format(addDays(today, 14), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
-    { id: uuidv4(), title: 'Kubernetes CKA', description: 'Certified Kubernetes Administrator', category: 'certifications', priority: 'medium', tentativeStartDate: format(subMonths(today, 2), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
-    { id: uuidv4(), title: 'Google Cloud Professional', category: 'certifications', priority: 'low', tentativeStartDate: format(addMonths(today, 2), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
+    { id: uuidv4(), title: 'AWS Solutions Architect', description: 'Professional certification exam prep', category: 'certifications', priority: 'high', tentativeStartDate: format(addDays(today, 14), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 120 },
+    { id: uuidv4(), title: 'Kubernetes CKA', description: 'Certified Kubernetes Administrator', category: 'certifications', priority: 'medium', tentativeStartDate: format(subMonths(today, 2), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 80 },
+    { id: uuidv4(), title: 'Google Cloud Professional', category: 'certifications', priority: 'low', tentativeStartDate: format(addMonths(today, 2), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 100 },
     // Udemy
-    { id: uuidv4(), title: 'React - Complete Guide', description: 'Maximilian course', category: 'udemy', priority: 'high', tentativeStartDate: format(subMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
-    { id: uuidv4(), title: 'System Design Masterclass', category: 'udemy', priority: 'medium', tentativeStartDate: format(addDays(today, 7), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
+    { id: uuidv4(), title: 'React - Complete Guide', description: 'Maximilian course', category: 'udemy', priority: 'high', tentativeStartDate: format(subMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 40 },
+    { id: uuidv4(), title: 'System Design Masterclass', category: 'udemy', priority: 'medium', tentativeStartDate: format(addDays(today, 7), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 30 },
     // Books
-    { id: uuidv4(), title: 'Designing Data-Intensive Apps', description: 'Martin Kleppmann', category: 'books', priority: 'high', tentativeStartDate: format(today, 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
-    { id: uuidv4(), title: 'Clean Architecture', description: 'Robert C. Martin', category: 'books', priority: 'medium', tentativeStartDate: format(addMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
-    { id: uuidv4(), title: 'The Pragmatic Programmer', category: 'books', priority: 'low', tentativeStartDate: format(subMonths(today, 3), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
+    { id: uuidv4(), title: 'Designing Data-Intensive Apps', description: 'Martin Kleppmann', category: 'books', priority: 'high', tentativeStartDate: format(today, 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 50 },
+    { id: uuidv4(), title: 'Clean Architecture', description: 'Robert C. Martin', category: 'books', priority: 'medium', tentativeStartDate: format(addMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 25 },
+    { id: uuidv4(), title: 'The Pragmatic Programmer', category: 'books', priority: 'low', tentativeStartDate: format(subMonths(today, 3), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 20 },
     // Interview
-    { id: uuidv4(), title: 'LeetCode - Hard Problems', description: 'Complete 50 hard problems', category: 'interview', priority: 'high', tentativeStartDate: format(addDays(today, 3), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
-    { id: uuidv4(), title: 'System Design Practice', category: 'interview', priority: 'medium', tentativeStartDate: format(subMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
+    { id: uuidv4(), title: 'LeetCode - Hard Problems', description: 'Complete 50 hard problems', category: 'interview', priority: 'high', tentativeStartDate: format(addDays(today, 3), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 60 },
+    { id: uuidv4(), title: 'System Design Practice', category: 'interview', priority: 'medium', tentativeStartDate: format(subMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 35 },
     // Concepts
-    { id: uuidv4(), title: 'Event Sourcing & CQRS', description: 'Deep dive into patterns', category: 'concepts', priority: 'medium', tentativeStartDate: format(addMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
-    { id: uuidv4(), title: 'GraphQL Federation', category: 'concepts', priority: 'low', tentativeStartDate: format(addDays(today, 21), 'yyyy-MM-dd'), createdAt: new Date().toISOString() },
+    { id: uuidv4(), title: 'Event Sourcing & CQRS', description: 'Deep dive into patterns', category: 'concepts', priority: 'medium', tentativeStartDate: format(addMonths(today, 1), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 15 },
+    { id: uuidv4(), title: 'GraphQL Federation', category: 'concepts', priority: 'low', tentativeStartDate: format(addDays(today, 21), 'yyyy-MM-dd'), createdAt: new Date().toISOString(), estimatedHours: 10 },
   ];
 };
 
@@ -107,15 +107,15 @@ export const useBacklog = () => {
   const reorderItems = (category: BacklogCategory, draggedId: string, targetId: string) => {
     const categoryItems = items.filter(item => item.category === category && !item.completedAt);
     const otherItems = items.filter(item => item.category !== category || !!item.completedAt);
-    
+
     const draggedIndex = categoryItems.findIndex(item => item.id === draggedId);
     const targetIndex = categoryItems.findIndex(item => item.id === targetId);
-    
+
     if (draggedIndex === -1 || targetIndex === -1) return;
-    
+
     const [draggedItem] = categoryItems.splice(draggedIndex, 1);
     categoryItems.splice(targetIndex, 0, draggedItem);
-    
+
     saveItems([...otherItems, ...categoryItems]);
   };
 

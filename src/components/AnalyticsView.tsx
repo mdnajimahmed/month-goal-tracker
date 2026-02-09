@@ -3,12 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useGoalTracker } from '@/hooks/useGoalTracker';
 import { MonthPicker } from './MonthPicker';
-import { Button } from '@/components/ui/button';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
-  Grid3X3,
-  BarChart3,
   TrendingUp,
   TrendingDown,
   Flame,
@@ -28,11 +26,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-interface AnalyticsViewProps {
-  onNavigateToGrid: () => void;
-}
-
-export const AnalyticsView = ({ onNavigateToGrid }: AnalyticsViewProps) => {
+export const AnalyticsView = () => {
   const navigate = useNavigate();
   const {
     currentYear,
@@ -92,26 +86,6 @@ export const AnalyticsView = ({ onNavigateToGrid }: AnalyticsViewProps) => {
             onPrevious={goToPreviousMonth}
             onNext={goToNextMonth}
           />
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onNavigateToGrid}
-            className="gap-2"
-          >
-            <Grid3X3 className="h-4 w-4" />
-            Grid
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="gap-2"
-          >
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </Button>
         </div>
       </div>
 
