@@ -155,7 +155,7 @@ const GoalAnalyticsPage = () => {
         </header>
         <main className="flex-1 flex items-center justify-center flex-col gap-4">
           <p className="text-muted-foreground">Goal not found.</p>
-          <Button onClick={() => navigate('/analytics')}>
+          <Button onClick={() => navigate('/')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Analytics
           </Button>
@@ -202,7 +202,7 @@ const GoalAnalyticsPage = () => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center gap-4 px-4 py-3 border-b bg-card">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/analytics')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex-1">

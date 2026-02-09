@@ -71,44 +71,44 @@ export const OperationAnalytics = () => {
   return (
     <div className="p-4 space-y-4 overflow-auto scrollbar-thin h-full">
       {/* Summary cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Tasks</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <PlusCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Active</CardTitle>
+            <PlusCircle className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.active}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.active}</div>
             <p className="text-xs text-muted-foreground">In progress</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Completed</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.completed}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.completed}</div>
             <p className="text-xs text-muted-foreground">Done</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Completion Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.completionRate.toFixed(0)}%</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.completionRate.toFixed(0)}%</div>
             <Progress value={stats.completionRate} className="mt-2" />
           </CardContent>
         </Card>
@@ -117,23 +117,24 @@ export const OperationAnalytics = () => {
       {/* Weekly trend chart */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Weekly Trend — Created vs Completed</CardTitle>
+          <CardTitle className="text-sm sm:text-base">Weekly Trend — Created vs Completed</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[280px]">
+          <div className="h-[220px] sm:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="week" tick={{ fill: 'hsl(var(--muted-foreground))' }} className="text-xs" />
-                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} className="text-xs" allowDecimals={false} />
+                <XAxis dataKey="week" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '6px',
+                    fontSize: '12px',
                   }}
                 />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
                 <Bar dataKey="created" name="Created" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="completed" name="Completed" fill="hsl(var(--rag-green))" radius={[2, 2, 0, 0]} />
               </BarChart>
@@ -145,10 +146,10 @@ export const OperationAnalytics = () => {
       {/* Per-quadrant breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Quadrant Breakdown</CardTitle>
+          <CardTitle className="text-sm sm:text-base">Quadrant Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
             {stats.quadrantStats.map((qs) => (
               <div
                 key={qs.quadrant}

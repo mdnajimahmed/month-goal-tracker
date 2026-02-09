@@ -12,9 +12,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const GoalGrid = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const {
     currentYear,
     currentMonth,
@@ -31,32 +33,32 @@ export const GoalGrid = () => {
   } = useGoalTracker();
 
   const [isAddingGoal, setIsAddingGoal] = useState(false);
-  // End date is the last day visible (D), start date is D-6 (7 days total)
   const [endDate, setEndDate] = useState<Date>(new Date());
 
   const today = new Date();
 
-  // Generate array of 7 days from endDate back to endDate-6
+  // Show fewer days on mobile
+  const visibleDays = isMobile ? 3 : 7;
+
   const days = useMemo(() => {
     const result: Date[] = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = visibleDays - 1; i >= 0; i--) {
       result.push(subDays(endDate, i));
     }
     return result;
-  }, [endDate]);
+  }, [endDate, visibleDays]);
 
   const handlePreviousWeek = () => {
-    setEndDate((prev) => subDays(prev, 7));
+    setEndDate((prev) => subDays(prev, visibleDays));
   };
 
   const handleNextWeek = () => {
-    setEndDate((prev) => addDays(prev, 7));
+    setEndDate((prev) => addDays(prev, visibleDays));
   };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setEndDate(date);
-      // Also sync the month data
       goToMonth(date.getFullYear(), date.getMonth());
     }
   };
@@ -65,23 +67,14 @@ export const GoalGrid = () => {
     navigate(`/day/${date}`);
   };
 
-  const handleViewAnalytics = (goalId?: string) => {
-    if (goalId) {
-      navigate(`/analytics/${goalId}`);
-    } else {
-      navigate('/analytics');
-    }
-  };
-
   const getDayInfo = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayOfWeek = date.getDay();
     const dayNumber = date.getDate();
-    
-    // Check if this day is in the current month's nonOfficeDays
+
     const isInCurrentMonth = date.getFullYear() === currentYear && date.getMonth() === currentMonth;
     const isNonOffice = isInCurrentMonth && monthData.nonOfficeDays.includes(dayNumber);
-    
+
     const isTodayDate = isToday(date);
     const isPast = isBefore(startOfDay(date), startOfDay(today)) || isTodayDate;
 
@@ -97,19 +90,18 @@ export const GoalGrid = () => {
   };
 
   const startDateFormatted = format(days[0], 'MMM d');
-  const endDateFormatted = format(endDate, 'MMM d, yyyy');
+  const endDateFormatted = format(endDate, isMobile ? 'MMM d' : 'MMM d, yyyy');
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-card">
-        <div className="flex items-center gap-2">
-          {/* Date navigation */}
+      <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b bg-card">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePreviousWeek}
-            className="h-8 w-8"
+            className="h-7 w-7 sm:h-8 sm:w-8"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -118,10 +110,10 @@ export const GoalGrid = () => {
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="min-w-[200px] justify-center gap-2 font-medium"
+                className="min-w-0 sm:min-w-[200px] justify-center gap-1 sm:gap-2 font-medium text-xs sm:text-sm px-2 sm:px-4"
               >
-                <CalendarIcon className="h-4 w-4" />
-                {startDateFormatted} - {endDateFormatted}
+                <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="truncate">{startDateFormatted} - {endDateFormatted}</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="center">
@@ -139,12 +131,11 @@ export const GoalGrid = () => {
             variant="ghost"
             size="icon"
             onClick={handleNextWeek}
-            className="h-8 w-8"
+            className="h-7 w-7 sm:h-8 sm:w-8"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-
       </div>
 
       {/* Grid */}
@@ -152,10 +143,8 @@ export const GoalGrid = () => {
         <div className="min-w-full">
           {/* Day headers */}
           <div className="flex sticky top-0 z-20 bg-card">
-            {/* Empty corner cell - matches GoalRowHeader width */}
-            <div className="sticky left-0 z-30 border-r border-b border-grid-border bg-grid-header w-[280px] shrink-0" />
-            
-            {/* Day columns - use flex-1 for equal distribution */}
+            <div className="sticky left-0 z-30 border-r border-b border-grid-border bg-grid-header w-[160px] sm:w-[220px] md:w-[280px] shrink-0" />
+
             <div className="flex flex-1">
               {days.map((date) => {
                 const info = getDayInfo(date);
@@ -163,39 +152,36 @@ export const GoalGrid = () => {
                   <div
                     key={info.date}
                     className={cn(
-                      'grid-cell grid-header flex flex-col items-center justify-center flex-1 min-w-[60px] cursor-pointer',
+                      'grid-cell grid-header flex flex-col items-center justify-center flex-1 min-w-[48px] sm:min-w-[60px] cursor-pointer',
                       !info.isOfficeDay && 'bg-day-nonoffice',
                       info.isToday && 'bg-day-today'
                     )}
                     onClick={() => handleSelectDay(info.date)}
                     onDoubleClick={() => {
-                      // Toggle non-office day for current month only
                       if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
                         toggleNonOfficeDay(info.dayNumber);
                       }
                     }}
                     title="Click to view day details. Double-click to toggle office/non-office day."
                   >
-                    <span className="text-xs">{info.dayName}</span>
-                    <span className="font-mono font-semibold">{info.dayNumber}</span>
+                    <span className="text-[10px] sm:text-xs">{info.dayName}</span>
+                    <span className="font-mono font-semibold text-xs sm:text-sm">{info.dayNumber}</span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Goal rows - sorted by start time, then end time */}
+          {/* Goal rows */}
           {[...monthData.goals]
             .sort((a, b) => {
-              // Compare start times first
               const startCompare = a.startTime.localeCompare(b.startTime);
               if (startCompare !== 0) return startCompare;
-              // If start times are equal, compare end times
               return a.endTime.localeCompare(b.endTime);
             })
             .map((goal) => {
             const analytics = calculateGoalAnalytics(goal.id);
-            
+
             return (
               <div key={goal.id} className="flex">
                 <GoalRowHeader
@@ -203,30 +189,29 @@ export const GoalGrid = () => {
                   analytics={analytics}
                   onUpdate={(updates) => updateGoal(goal.id, updates)}
                   onDelete={() => deleteGoal(goal.id)}
-                  onViewAnalytics={() => handleViewAnalytics(goal.id)}
+                  onViewAnalytics={() => navigate(`/goal-analytics/${goal.id}`)}
                 />
-                
-                {/* Day cells container - matches header structure */}
+
                 <div className="flex flex-1">
                   {days.map((date) => {
                     const info = getDayInfo(date);
                     const entry = getEntry(goal.id, info.date);
                     const dayOfWeek = date.getDay();
                     const isDisabledForGoal = !isGoalActiveOnDay(goal, dayOfWeek);
-                    
+
                     if (isDisabledForGoal) {
                       const scopeLabel = goal.isWeekendGoal ? 'Weekend goal — not active on weekdays' : 'Weekday goal — not active on weekends';
                       return (
                         <div
                           key={info.date}
-                          className="grid-cell relative flex flex-col items-center justify-center gap-0.5 min-h-[56px] flex-1 min-w-[60px] bg-muted/20 opacity-30 cursor-not-allowed"
+                          className="grid-cell relative flex flex-col items-center justify-center gap-0.5 min-h-[48px] sm:min-h-[56px] flex-1 min-w-[48px] sm:min-w-[60px] bg-muted/20 opacity-30 cursor-not-allowed"
                           title={scopeLabel}
                         >
                           <span className="text-[10px] text-muted-foreground">—</span>
                         </div>
                       );
                     }
-                    
+
                     return (
                       <DayCell
                         key={info.date}

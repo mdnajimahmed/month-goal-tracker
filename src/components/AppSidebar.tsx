@@ -1,4 +1,4 @@
-import { Target, LayoutGrid, Telescope, BarChart3 } from 'lucide-react';
+import { Target, LayoutGrid, Telescope } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -17,7 +17,6 @@ const navItems = [
   { title: 'Execution', url: '/', icon: Target },
   { title: 'Operation', url: '/operation', icon: LayoutGrid },
   { title: 'Vision', url: '/vision', icon: Telescope },
-  { title: 'Analytics', url: '/analytics', icon: BarChart3 },
 ];
 
 export function AppSidebar() {

@@ -92,22 +92,22 @@ export const AnalyticsView = () => {
       {/* Content */}
       <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
         {monthData.goals.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm text-center p-4">
             No goals defined for this month. Add goals in the grid view to see analytics.
           </div>
         ) : (
           <>
             {/* Summary cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
                     Overall Completion
                   </CardTitle>
-                  <Target className="h-4 w-4 text-muted-foreground" />
+                  <Target className="h-4 w-4 text-muted-foreground hidden sm:block" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl sm:text-2xl font-bold">
                     {analytics.overallCompletionRate.toFixed(1)}%
                   </div>
                   <Progress value={analytics.overallCompletionRate} className="mt-2" />
@@ -116,22 +116,22 @@ export const AnalyticsView = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Goals</CardTitle>
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Goals</CardTitle>
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground hidden sm:block" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analytics.totalGoals}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{analytics.totalGoals}</div>
                   <p className="text-xs text-muted-foreground">Active this month</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Best Performer</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-rag-green" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Best Performer</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-rag-green hidden sm:block" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-lg font-bold truncate">
+                  <div className="text-base sm:text-lg font-bold truncate">
                     {bestGoal?.title || 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -146,11 +146,11 @@ export const AnalyticsView = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Needs Work</CardTitle>
-                  <TrendingDown className="h-4 w-4 text-rag-red" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Needs Work</CardTitle>
+                  <TrendingDown className="h-4 w-4 text-rag-red hidden sm:block" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-lg font-bold truncate">
+                  <div className="text-base sm:text-lg font-bold truncate">
                     {worstGoal?.title || 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -164,31 +164,33 @@ export const AnalyticsView = () => {
               </Card>
             </div>
 
-            {/* Daily heatmap - full width */}
+            {/* Daily heatmap */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Daily Hit Rate</CardTitle>
+                <CardTitle className="text-sm sm:text-base">Daily Hit Rate</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[200px]">
+                <div className="h-[180px] sm:h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={heatmapData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis
                         dataKey="date"
                         className="text-xs"
-                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                       />
                       <YAxis
                         domain={[0, 100]}
                         className="text-xs"
-                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                        width={30}
                       />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: 'hsl(var(--card))',
                           border: '1px solid hsl(var(--border))',
                           borderRadius: '6px',
+                          fontSize: '12px',
                         }}
                         formatter={(value: number) => [`${value.toFixed(0)}%`, 'Hit Rate']}
                       />
@@ -203,10 +205,10 @@ export const AnalyticsView = () => {
               </CardContent>
             </Card>
 
-            {/* Goal performance table */}
+            {/* Goal performance */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Flame className="h-4 w-4" />
                   Goal Performance & Streaks
                 </CardTitle>
@@ -216,47 +218,47 @@ export const AnalyticsView = () => {
                   {goalPerformanceData.map((goal) => (
                     <div
                       key={goal.id}
-                      className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/analytics/${goal.id}`)}
+                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/goal-analytics/${goal.id}`)}
                     >
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{goal.name}</h4>
+                        <h4 className="font-medium text-sm truncate">{goal.name}</h4>
                         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3 text-rag-green" />
-                            {goal.hitDays} hit
+                            {goal.hitDays}
                           </span>
                           <span className="flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3 text-rag-amber" />
-                            {goal.partialDays} partial
+                            {goal.partialDays}
                           </span>
                           <span className="flex items-center gap-1">
                             <XCircle className="h-3 w-3 text-rag-red" />
-                            {goal.missDays} miss
+                            {goal.missDays}
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         <div className="text-center">
                           <div className="flex items-center gap-1 text-rag-amber">
-                            <Flame className="h-4 w-4" />
-                            <span className="font-mono font-bold">{goal.streak}</span>
+                            <Flame className="h-3.5 w-3.5" />
+                            <span className="font-mono font-bold text-sm">{goal.streak}</span>
                           </div>
                           <p className="text-[10px] text-muted-foreground">Current</p>
                         </div>
                         <div className="text-center">
-                          <div className="font-mono font-bold text-muted-foreground">
+                          <div className="font-mono font-bold text-sm text-muted-foreground">
                             {goal.longestStreak}
                           </div>
                           <p className="text-[10px] text-muted-foreground">Best</p>
                         </div>
-                        <div className="w-24">
+                        <div className="w-16 sm:w-24">
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span className="font-mono">{goal.completionRate.toFixed(0)}%</span>
                           </div>
                           <Progress value={goal.completionRate} className="h-2" />
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
                       </div>
                     </div>
                   ))}
@@ -268,7 +270,7 @@ export const AnalyticsView = () => {
             {missedReasonData.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-rag-amber" />
                     Top Reasons for Missed Goals
                   </CardTitle>
@@ -280,13 +282,13 @@ export const AnalyticsView = () => {
                         key={reason.name}
                         className="flex items-center gap-3"
                       >
-                        <span className="w-6 text-center font-mono text-muted-foreground">
+                        <span className="w-6 text-center font-mono text-muted-foreground text-sm">
                           #{index + 1}
                         </span>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium">{reason.name}</span>
-                            <span className="font-mono text-sm">{reason.value}x</span>
+                            <span className="font-medium text-sm truncate">{reason.name}</span>
+                            <span className="font-mono text-sm shrink-0 ml-2">{reason.value}x</span>
                           </div>
                           <Progress
                             value={

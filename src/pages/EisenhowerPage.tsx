@@ -3,12 +3,13 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEisenhower } from '@/hooks/useEisenhower';
 import { EisenhowerQuadrantComponent } from '@/components/EisenhowerQuadrant';
+import { OperationAnalytics } from '@/components/OperationAnalytics';
 import { EisenhowerQuadrant, EisenhowerTask, QUADRANT_CONFIG } from '@/types/eisenhower';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Info, LayoutGrid, CheckCircle2, Undo2, Trash2 } from 'lucide-react';
+import { Info, LayoutGrid, CheckCircle2, BarChart3, Undo2, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -71,7 +72,7 @@ const EisenhowerPage = () => {
             <p className="text-xs text-muted-foreground">{totalActive} active tasks</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="hidden sm:flex items-center gap-1.5">
           {stats.map((s) => (
             <div
               key={s.quadrant}
@@ -89,51 +90,62 @@ const EisenhowerPage = () => {
       </header>
 
       <Tabs defaultValue="in-progress" className="flex flex-col flex-1 overflow-hidden">
-        <div className="px-4 pt-2 shrink-0">
+        <div className="px-4 pt-2 shrink-0 overflow-x-auto">
           <TabsList>
             <TabsTrigger value="in-progress" className="flex items-center gap-1.5">
               <LayoutGrid className="h-3.5 w-3.5" />
-              In Progress
+              <span className="hidden sm:inline">In Progress</span>
+              <span className="sm:hidden">Active</span>
             </TabsTrigger>
             <TabsTrigger value="completed" className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Completed
+              <span className="hidden sm:inline">Completed</span>
+              <span className="sm:hidden">Done</span>
               {completedTasks.length > 0 && (
                 <span className="text-[10px] bg-muted px-1.5 rounded-full font-mono">{completedTasks.length}</span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Analytics
             </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="in-progress" className="flex-1 overflow-hidden mt-0">
           <div className="relative h-full">
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+            {/* Axis labels - hidden on mobile */}
+            <div className="hidden md:flex absolute top-2 left-1/2 -translate-x-1/2 z-10 items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
               <span className="text-destructive">← Urgent</span>
               <span className="w-px h-3 bg-border" />
               <span className="text-muted-foreground/50">Not Urgent →</span>
             </div>
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
+            <div className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10">
               <div className="flex flex-col items-center gap-2 text-[10px] font-semibold uppercase tracking-widest" style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}>
                 <span className="text-primary rotate-180">← Important</span>
                 <span className="w-3 h-px bg-border" />
                 <span className="text-muted-foreground/50 rotate-180">Not Important →</span>
               </div>
             </div>
-            <div className="grid grid-cols-2 grid-rows-2 gap-3 p-4 pl-8 pt-8 h-full">
-              {QUADRANTS.map((q) => (
-                <EisenhowerQuadrantComponent
-                  key={q}
-                  quadrant={q}
-                  tasks={getTasksByQuadrant(q)}
-                  onComplete={completeTask}
-                  onDelete={deleteTask}
-                  onUpdate={updateTask}
-                  onAdd={handleAdd}
-                  onDragStart={handleDragStart}
-                  onDrop={handleDrop}
-                />
-              ))}
-            </div>
+
+            {/* Grid - 2x2 on desktop, single column on mobile */}
+            <ScrollArea className="h-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-4 md:pl-8 md:pt-8 sm:grid-rows-2 sm:h-full">
+                {QUADRANTS.map((q) => (
+                  <EisenhowerQuadrantComponent
+                    key={q}
+                    quadrant={q}
+                    tasks={getTasksByQuadrant(q)}
+                    onComplete={completeTask}
+                    onDelete={deleteTask}
+                    onUpdate={updateTask}
+                    onAdd={handleAdd}
+                    onDragStart={handleDragStart}
+                    onDrop={handleDrop}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </TabsContent>
 
@@ -160,7 +172,7 @@ const EisenhowerPage = () => {
                               {task.description && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{task.description}</p>
                               )}
-                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
                                 <span className={cn('px-1.5 py-0.5 rounded text-[10px]', config.badgeClass)}>
                                   {config.label}
                                 </span>
@@ -191,6 +203,10 @@ const EisenhowerPage = () => {
               </div>
             )}
           </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="flex-1 overflow-hidden mt-0">
+          <OperationAnalytics />
         </TabsContent>
       </Tabs>
     </div>

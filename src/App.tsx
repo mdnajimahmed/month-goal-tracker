@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
 import Index from "./pages/Index";
 import DayPage from "./pages/DayPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
 import GoalAnalyticsPage from "./pages/GoalAnalyticsPage";
 import BacklogPage from "./pages/BacklogPage";
 import EisenhowerPage from "./pages/EisenhowerPage";
@@ -24,8 +23,7 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/day/:date" element={<DayPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/analytics/:goalId" element={<GoalAnalyticsPage />} />
+            <Route path="/goal-analytics/:goalId" element={<GoalAnalyticsPage />} />
             <Route path="/operation" element={<EisenhowerPage />} />
             <Route path="/vision" element={<BacklogPage />} />
           </Route>
