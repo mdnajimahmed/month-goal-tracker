@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../config/database.js';
 import { z } from 'zod';
 import { authenticateToken, AuthRequest } from '../middleware/auth.js';
+import { getParam } from '../utils/params.js';
 
 const router = Router();
 
@@ -53,7 +54,7 @@ router.get('/', async (req: AuthRequest, res) => {
 
 // Get backlog item by ID
 router.get('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   const item = await prisma.backlogItem.findFirst({
     where: { 
       id,
@@ -80,7 +81,7 @@ router.post('/', async (req: AuthRequest, res) => {
 
 // Update backlog item
 router.put('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.backlogItem.findFirst({
     where: { id, userId: req.userId! },
@@ -100,7 +101,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
 
 // Complete backlog item
 router.post('/:id/complete', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.backlogItem.findFirst({
     where: { id, userId: req.userId! },
@@ -119,7 +120,7 @@ router.post('/:id/complete', async (req: AuthRequest, res) => {
 
 // Uncomplete backlog item
 router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.backlogItem.findFirst({
     where: { id, userId: req.userId! },
@@ -138,7 +139,7 @@ router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
 
 // Delete backlog item
 router.delete('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.backlogItem.findFirst({
     where: { id, userId: req.userId! },

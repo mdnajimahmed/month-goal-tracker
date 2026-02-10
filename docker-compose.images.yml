@@ -1,0 +1,50 @@
+# Run the full app locally using pre-built images from docker-push.sh
+# Usage: export FE_TAG=fe-2026-02-09-1430-abc1234 BE_TAG=be-2026-02-09-1430-abc1234
+#        docker compose -f docker-compose.images.yml up -d
+# Or after docker-push.sh: copy the export line it prints and run docker compose.
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ruthless-execution-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: goal_tracker
+    ports:
+      - "2345:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  be:
+    image: ivplay4689/ruthless-execution:${BE_TAG:-latest}
+    container_name: ruthless-execution-be
+    environment:
+      NODE_ENV: production
+      PORT: 9559
+      # Inside the Docker network, postgres is reachable on its internal port 5432
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/goal_tracker?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    ports:
+      - "9559:9559"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  fe:
+    image: ivplay4689/ruthless-execution:${FE_TAG:-latest}
+    container_name: ruthless-execution-fe
+    ports:
+      - "4689:8080"
+    depends_on:
+      - be
+
+volumes:
+  postgres_data:

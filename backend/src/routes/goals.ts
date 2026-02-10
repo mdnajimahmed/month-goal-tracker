@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../config/database.js';
 import { z } from 'zod';
 import { authenticateToken, AuthRequest } from '../middleware/auth.js';
+import { getParam } from '../utils/params.js';
 
 const router = Router();
 
@@ -50,7 +51,7 @@ router.get('/', async (req: AuthRequest, res) => {
 
 // Get goal by ID
 router.get('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   const goal = await prisma.goal.findFirst({
     where: { 
       id,
@@ -82,7 +83,7 @@ router.post('/', async (req: AuthRequest, res) => {
 
 // Update goal
 router.put('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   // First verify user owns this goal
   const existing = await prisma.goal.findFirst({
@@ -104,7 +105,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
 // Complete goal
 router.post('/:id/complete', async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = getParam(req, 'id');
     
     // Verify user owns this goal
     const existing = await prisma.goal.findFirst({
@@ -133,7 +134,7 @@ router.post('/:id/complete', async (req: AuthRequest, res) => {
 // Uncomplete goal
 router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = getParam(req, 'id');
     
     // Verify user owns this goal
     const existing = await prisma.goal.findFirst({
@@ -161,7 +162,7 @@ router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
 
 // Delete goal
 router.delete('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   // First verify user owns this goal
   const existing = await prisma.goal.findFirst({

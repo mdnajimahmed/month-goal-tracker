@@ -59,7 +59,7 @@ process.on('SIGINT', async () => {
 });
 
 // For local development
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 9559;
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

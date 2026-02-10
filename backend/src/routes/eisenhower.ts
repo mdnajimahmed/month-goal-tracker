@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../config/database.js';
 import { z } from 'zod';
 import { authenticateToken, AuthRequest } from '../middleware/auth.js';
+import { getParam } from '../utils/params.js';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.get('/', async (req: AuthRequest, res) => {
 
 // Get task by ID
 router.get('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   const task = await prisma.eisenhowerTask.findFirst({
     where: { 
       id,
@@ -73,7 +74,7 @@ router.post('/', async (req: AuthRequest, res) => {
 
 // Update task
 router.put('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   // Verify ownership
   const existing = await prisma.eisenhowerTask.findFirst({
@@ -94,7 +95,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
 
 // Complete task
 router.post('/:id/complete', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.eisenhowerTask.findFirst({
     where: { id, userId: req.userId! },
@@ -113,7 +114,7 @@ router.post('/:id/complete', async (req: AuthRequest, res) => {
 
 // Uncomplete task
 router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.eisenhowerTask.findFirst({
     where: { id, userId: req.userId! },
@@ -132,7 +133,7 @@ router.post('/:id/uncomplete', async (req: AuthRequest, res) => {
 
 // Move task to different quadrant
 router.post('/:id/move', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.eisenhowerTask.findFirst({
     where: { id, userId: req.userId! },
@@ -155,7 +156,7 @@ router.post('/:id/move', async (req: AuthRequest, res) => {
 
 // Delete task
 router.delete('/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params;
+  const id = getParam(req, 'id');
   
   const existing = await prisma.eisenhowerTask.findFirst({
     where: { id, userId: req.userId! },
