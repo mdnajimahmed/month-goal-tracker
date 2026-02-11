@@ -44,7 +44,13 @@ router.get('/', async (req: AuthRequest, res) => {
   const items = await prisma.backlogItem.findMany({
     where,
     orderBy: [
+      // Incomplete items (completedAt null) first, then completed
       { completedAt: 'asc' },
+      // Group by category for stable client-side filtering
+      { category: 'asc' },
+      // Within a category, use manual sort order if set
+      { sortOrder: 'asc' },
+      // Fallback ordering for items with same sortOrder
       { priority: 'desc' },
       { createdAt: 'desc' },
     ],
@@ -70,13 +76,62 @@ router.get('/:id', async (req: AuthRequest, res) => {
 // Create backlog item
 router.post('/', async (req: AuthRequest, res) => {
   const data = backlogItemSchema.parse(req.body);
+
+  // Place new item at the end of its category for this user
+  const maxOrderForCategory = await prisma.backlogItem.aggregate({
+    where: {
+      userId: req.userId!,
+      category: data.category,
+      completedAt: null,
+    },
+    _max: { sortOrder: true },
+  });
+
+  const nextSortOrder = (maxOrderForCategory._max.sortOrder ?? 0) + 1;
+
   const item = await prisma.backlogItem.create({
     data: {
       ...data,
       userId: req.userId!, // CRITICAL: Set userId
+      sortOrder: nextSortOrder,
     },
   });
   res.status(201).json(item);
+});
+
+// Persist manual order within a category
+router.post('/reorder', async (req: AuthRequest, res) => {
+  const bodySchema = z.object({
+    category: z.enum(['certifications', 'udemy', 'books', 'interview', 'concepts']),
+    orderedIds: z.array(z.string().uuid()),
+  });
+
+  const { category, orderedIds } = bodySchema.parse(req.body);
+
+  // Ensure all items belong to this user and category (and are not completed)
+  const items = await prisma.backlogItem.findMany({
+    where: {
+      id: { in: orderedIds },
+      userId: req.userId!,
+      category,
+      completedAt: null,
+    },
+    select: { id: true },
+  });
+
+  const validIds = new Set(items.map((i) => i.id));
+  const filteredOrder = orderedIds.filter((id) => validIds.has(id));
+
+  await prisma.$transaction(
+    filteredOrder.map((id, index) =>
+      prisma.backlogItem.update({
+        where: { id },
+        data: { sortOrder: index },
+      })
+    )
+  );
+
+  res.status(204).send();
 });
 
 // Update backlog item

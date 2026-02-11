@@ -11,6 +11,8 @@ export interface BacklogItem {
   createdAt: string;
   completedAt?: string; // ISO date string when item was completed
   estimatedHours?: number; // Estimated study hours needed
+   // Optional manual order within a category (0-based, persisted in DB)
+  sortOrder?: number;
 }
 
 export const BACKLOG_CATEGORIES: { key: BacklogCategory; label: string }[] = [

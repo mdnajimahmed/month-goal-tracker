@@ -18,4 +18,6 @@ export const backlogApi = {
   complete: (id: string) => api.post<BacklogItem>(`/backlog/${id}/complete`),
   uncomplete: (id: string) => api.post<BacklogItem>(`/backlog/${id}/uncomplete`),
   delete: (id: string) => api.delete<void>(`/backlog/${id}`),
+  reorder: (category: BacklogCategory, orderedIds: string[]) =>
+    api.post<void>('/backlog/reorder', { category, orderedIds }),
 };

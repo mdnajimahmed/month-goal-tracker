@@ -92,6 +92,7 @@ model BacklogItem {
   tentativeStartDate String   // "2025-03-15" format
   estimatedHours    Int?
   completedAt       DateTime?
+  sortOrder         Int       @default(0) // per-category manual ordering
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
@@ -99,4 +100,5 @@ model BacklogItem {
   @@index([category])
   @@index([priority])
   @@index([completedAt])
+  @@index([userId, category, sortOrder])
 }

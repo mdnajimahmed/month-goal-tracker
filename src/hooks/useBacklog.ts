@@ -97,7 +97,7 @@ export const useBacklog = () => {
       });
   };
 
-  // Reorder items (client-side only for now)
+  // Reorder items within a category (optimistic, then persisted to backend)
   const reorderItems = (category: BacklogCategory, draggedId: string, targetId: string) => {
     const categoryItems = processedItems.filter(
       (item) => item.category === category && !item.completedAt
@@ -114,9 +114,20 @@ export const useBacklog = () => {
     const [draggedItem] = categoryItems.splice(draggedIndex, 1);
     categoryItems.splice(targetIndex, 0, draggedItem);
 
-    // Note: This doesn't persist order to backend. You'd need to add an order field to the schema.
-    // For now, this is client-side only.
+    // Optimistic client-side reorder
     queryClient.setQueryData(['backlog-items'], [...otherItems, ...categoryItems]);
+
+    // Persist new order for this category
+    const orderedIds = categoryItems.map((item) => item.id);
+    backlogApi
+      .reorder(category, orderedIds)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['backlog-items'] });
+      })
+      .catch(() => {
+        // On error, refetch to realign with server
+        queryClient.invalidateQueries({ queryKey: ['backlog-items'] });
+      });
   };
 
   return {
