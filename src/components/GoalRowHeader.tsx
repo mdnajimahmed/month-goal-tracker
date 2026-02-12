@@ -136,7 +136,7 @@ export const GoalRowHeader = ({
           {goal.targetEndDate && (
             <span className="hidden sm:inline" title="Target end date">
               <CalendarIcon className="inline h-3 w-3 mr-0.5 -mt-px" />
-              {format(parseISO(goal.targetEndDate), 'MMM d')}
+              {format(parseISO(goal.targetEndDate), 'MMM d, yyyy')}
             </span>
           )}
         </div>
