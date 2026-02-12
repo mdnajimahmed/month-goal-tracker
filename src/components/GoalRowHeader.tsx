@@ -130,17 +130,20 @@ export const GoalRowHeader = ({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-mono">
-          <span>{formatTime(goal.startTime)} - {formatTime(goal.endTime)}</span>
-          <span className="text-foreground">{formatDuration(goal.allocatedMinutes)}</span>
+        {/* Time, duration, date: each group stays on one line; groups wrap together when needed */}
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground font-mono">
+          <span className="whitespace-nowrap" title="Time block">
+            {formatTime(goal.startTime)} – {formatTime(goal.endTime)}
+          </span>
+          <span className="whitespace-nowrap text-foreground">{formatDuration(goal.allocatedMinutes)}</span>
           {goal.targetEndDate && (
-            <span className="hidden sm:inline" title="Target end date">
-              <CalendarIcon className="inline h-3 w-3 mr-0.5 -mt-px" />
-              {format(parseISO(goal.targetEndDate), 'MMM d, yyyy')}
+            <span className="whitespace-nowrap inline-flex items-center gap-1 shrink-0" title="Target end date">
+              <CalendarIcon className="h-3 w-3 shrink-0" />
+              <span>{format(parseISO(goal.targetEndDate), 'MMM d, yyyy')}</span>
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-2">
+        <div className="flex items-center gap-2 sm:gap-3 mt-2 min-w-0">
           <div className="flex items-center gap-1 text-xs">
             <Flame className="h-3 w-3 text-rag-amber" />
             <span className="font-mono">{analytics.currentStreak}</span>
