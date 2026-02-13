@@ -5,7 +5,7 @@
 
 
 # Use with caution: 
-I have not reveiwed the code or script. if you find any security issue or risk to use this locally please email me at najim.ju@gmail.com. 
+I have not reveiwed the code or script. if you find any security issue or risk to use this locally please email me at najim.ju@gmail.com. If you are convinced that it secured to use, then clone the repo locally or just download the docker-compose.images.yml file.
 
 # Docker images: 
 Published images are multi-platform (linux/amd64, linux/arm64) and work on Windows (WSL2), Linux, and macOS (Intel and Apple Silicon).
@@ -13,23 +13,30 @@ Published images are multi-platform (linux/amd64, linux/arm64) and work on Windo
 https://hub.docker.com/r/ivplay4689/ruthless-execution/tags
 
 
-Find the latest fe and be docker image then - 
+Find the latest fe and be docker image and note it down in a text editor.
+
+
 
 # Run it locally:
-Clone the repo locally or just download the docker-compose.images.yml file.
 
+## Environment variables to know:
 
-#### export FE_TAG=fe-2026-02-13-0742-4569ff4 BE_TAG=be-2026-02-13-0742-4569ff4
-Optional: set these to auto-create a user so you can log in right after "up"
-- export BOOTSTRAP_USER_EMAIL=you@example.com - BOOTSTRAP_USER_PASSWORD=yourpassword
-- docker compose -f docker-compose.images.yml up -d
+Pass these to `docker compose` (e.g. `export` in your shell or put them in a `.env` file). They are used when starting the **be** service.
 
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `FE_TAG` | Yes | Frontend image tag (e.g. `fe-2026-02-13-0803-ec8e614`). |
+| `BE_TAG` | Yes | Backend image tag (e.g. `be-2026-02-13-0803-ec8e614`). Must be `be-...`, not `be-fe-...`. |
+| `JWT_SECRET` | No | Secret for signing auth tokens. Default: `change-me-in-production`. Set in production. |
+| `BOOTSTRAP_USER_EMAIL` | No | If set with `BOOTSTRAP_USER_PASSWORD`, a user is created on first backend start so you can log in. |
+| `BOOTSTRAP_USER_PASSWORD` | No | Password for the bootstrap user (min 8 characters). Ignored unless `BOOTSTRAP_USER_EMAIL` is set. |
 
-#### Example: 
+## Sample command:
 ```
 export FE_TAG=fe-2026-02-13-0803-ec8e614 BE_TAG=be-2026-02-13-0803-ec8e614 BOOTSTRAP_USER_EMAIL=you@example.com BOOTSTRAP_USER_PASSWORD=yourpassword
 docker compose -f docker-compose.images.yml up -d
 ```
+
 If you didn't use bootstrap env vars, create a user manually (after the stack is up):
 
 docker compose -f docker-compose.images.yml exec be npm run create-user <EMAIL> <PASSWORD>
