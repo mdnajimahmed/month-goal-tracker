@@ -14,6 +14,9 @@ https://hub.docker.com/r/ivplay4689/ruthless-execution/tags
 Find the latest fe and be docker image then - 
 
 # Run it locally:
+Clone the repo locally or just download the docker-compose.images.yml file.
+
+
 export FE_TAG=fe-2026-02-13-0742-4569ff4 BE_TAG=be-2026-02-13-0742-4569ff4
 # Optional: set these to auto-create a user so you can log in right after "up"
 # export BOOTSTRAP_USER_EMAIL=you@example.com BOOTSTRAP_USER_PASSWORD=yourpassword
