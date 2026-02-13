@@ -26,9 +26,10 @@ Optional: set these to auto-create a user so you can log in right after "up"
 
 
 #### Example: 
+```
 export FE_TAG=fe-2026-02-13-0803-ec8e614 BE_TAG=be-2026-02-13-0803-ec8e614 BOOTSTRAP_USER_EMAIL=you@example.com BOOTSTRAP_USER_PASSWORD=yourpassword
 docker compose -f docker-compose.images.yml up -d
-
+```
 If you didn't use bootstrap env vars, create a user manually (after the stack is up):
 
 docker compose -f docker-compose.images.yml exec be npm run create-user <EMAIL> <PASSWORD>
