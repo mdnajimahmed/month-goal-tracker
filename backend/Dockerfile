@@ -39,4 +39,5 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 9559
 
-CMD ["node", "dist/index.js"]
+# Apply schema (migrate if migrations exist, else db push) then start server
+CMD ["sh", "-c", "(npx prisma migrate deploy 2>/dev/null || npx prisma db push --accept-data-loss) && node dist/index.js"]

@@ -58,12 +58,20 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// For local development
+// For local development (and Docker): start server after optional bootstrap user
 const PORT = process.env.PORT || 9559;
-if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+
+try {
+  const { bootstrapUser } = await import('./scripts/bootstrap-user.js');
+  await bootstrapUser();
+  if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+} catch (err) {
+  console.error(err);
+  process.exit(1);
 }
 
 export default app;

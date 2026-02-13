@@ -32,6 +32,9 @@ services:
       # Inside the Docker network, postgres is reachable on its internal port 5432
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/goal_tracker?schema=public
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      # Optional: create this user on first startup so you can log in after "docker compose up"
+      BOOTSTRAP_USER_EMAIL: ${BOOTSTRAP_USER_EMAIL:-}
+      BOOTSTRAP_USER_PASSWORD: ${BOOTSTRAP_USER_PASSWORD:-}
     ports:
       - "9559:9559"
     depends_on:
